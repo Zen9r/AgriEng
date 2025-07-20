@@ -6,13 +6,13 @@ import { useAuth } from '@/context/AuthContext';
 // تعريف وتصدير واجهة البيانات للملف الشخصي
 export interface Profile {
   id: string;
-  full_name: string;
-  student_id: string;
-  college: string;
-  major: string;
-  phone_number: string;
+  // تم التعديل هنا للسماح بقيم null
+  full_name: string | null;
+  student_id: string | null;
+  college: string | null;
+  major: string | null;
+  phone_number: string | null;
   avatar_url: string | null;
-  // تم استبدال الأدوار واللجان القديمة بهذا العامود البسيط
   club_role: 'club_leader' | 'club_deputy' | 'club_supervisor' | 'member';
 }
 

@@ -1,7 +1,6 @@
+// components/footer.tsx (الكود المعدّل)
 import Image from "next/image"
-// -- 1. تم حذف أيقونة X من هنا لأننا سنستخدم صورة بدلاً منها
-import { Mail, Phone, MapPin, Clock } from "lucide-react" 
-// -- ملاحظة: إذا كنت لا تستخدم Link هنا، يمكنك حذفه أيضاً
+import { Mail, Phone, MapPin } from "lucide-react" 
 import Link from 'next/link' 
 
 export default function Footer() {
@@ -13,33 +12,32 @@ export default function Footer() {
           <div className="lg:col-span-2">
             <div className="flex items-center mb-4">
               <Image
-                src="/club-logo.png"
-                alt="شعار النادي"
+                src="/club-logo.png" // تأكد من أن هذا المسار صحيح
+                alt="شعار نادي الهندسة الزراعية"
                 width={48}
                 height={48}
                 className="ml-3 object-contain"
               />
               <div>
-                <h3 className="text-xl font-bold">النادي الثقافي الاجتماعي</h3>
+                {/* تم تعديل اسم النادي */}
+                <h3 className="text-xl font-bold">نادي الهندسة الزراعية</h3>
                 <p className="text-gray-400 text-sm">كلية علوم الأغذية والزراعة</p>
               </div>
             </div>
+            {/* تم تعديل الوصف */}
             <p className="text-gray-300 mb-6 leading-relaxed">
-              نادي طلابي يهدف إلى إثراء الحياة الجامعية من خلال تنظيم الفعاليات الثقافية والاجتماعية التي تساهم في بناء
-              شخصية الطالب وتطوير مهاراته المختلفة.
+              نادي طلابي متخصص يهدف إلى ربط الدراسة الأكاديمية بالتطبيق العملي في مجال الهندسة الزراعية، عبر المشاريع التقنية والزيارات الميدانية.
             </p>
             <div className="flex space-x-4 rtl:space-x-reverse">
-              {/* --- 2. بدأ التعديل هنا --- */}
               <a href="https://x.com/cfas_ksu_" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:opacity-80 transition-opacity">
                 <Image
-                  src="/icons8-x-480.png" // <-- مسار الصورة من مجلد public
+                  src="/icons8-x-480.png" 
                   alt="شعار منصة إكس"
-                  width={24}  // حجم مناسب ليكون مثل أيقونة
+                  width={24}
                   height={24}
                   className="brightness-0 invert"
                 />
               </a>
-              {/* --- انتهى التعديل هنا --- */}
             </div>
           </div>
 
@@ -47,16 +45,17 @@ export default function Footer() {
           <div>
             <h4 className="text-lg font-semibold mb-4">معلومات التواصل</h4>
             <div className="space-y-3">
+               {/* تم تعديل لون الأيقونات */}
               <div className="flex items-center text-gray-300">
-                <Mail className="w-5 h-5 ml-3 text-[#42A5F5]" />
-                <span className="text-sm">club@foodagri.edu.sa</span>
+                <Mail className="w-5 h-5 ml-3 text-secondary" />
+                <span className="text-sm">AgriEng.club@ksu.edu.sa</span>
               </div>
               <div className="flex items-center text-gray-300">
-                <Phone className="w-5 h-5 ml-3 text-[#42A5F5]" />
-                <span className="text-sm">+966 11 234 5678</span>
+                <Phone className="w-5 h-5 ml-3 text-secondary" />
+                <span className="text-sm">+966 11 467 8451</span>
               </div>
               <div className="flex items-start text-gray-300">
-                <MapPin className="w-5 h-5 ml-3 mt-1 text-[#42A5F5] flex-shrink-0" />
+                <MapPin className="w-5 h-5 ml-3 mt-1 text-secondary flex-shrink-0" />
                 <span className="text-sm">
                   <a href="https://maps.app.goo.gl/hvgFiMt1RAo3gL4bA" target="_blank" rel="noopener noreferrer" className="hover:underline">كلية علوم الأغذية والزراعة</a>
                   <br />
@@ -70,19 +69,20 @@ export default function Footer() {
           <div>
             <h4 className="text-lg font-semibold mb-4">روابط سريعة</h4>
             <div className="space-y-2">
-              <Link href="/" className="block text-gray-300 hover:text-[#42A5F5] transition-colors text-sm">
+              {/* تم تعديل ألوان الـ hover */}
+              <Link href="/" className="block text-gray-300 hover:text-secondary transition-colors text-sm">
                 الرئيسية
               </Link>
-              <Link href="/events" className="block text-gray-300 hover:text-[#42A5F5] transition-colors text-sm">
+              <Link href="/events" className="block text-gray-300 hover:text-secondary transition-colors text-sm">
                 الفعاليات
               </Link>
-              <Link href="/gallery" className="block text-gray-300 hover:text-[#42A5F5] transition-colors text-sm">
+              <Link href="/gallery" className="block text-gray-300 hover:text-secondary transition-colors text-sm">
                 معرض الصور
               </Link>
-              <Link href="/contact" className="block text-gray-300 hover:text-[#42A5F5] transition-colors text-sm">
+              <Link href="/contact" className="block text-gray-300 hover:text-secondary transition-colors text-sm">
                 تواصل معنا
               </Link>
-              <Link href="/register" className="block text-gray-300 hover:text-[#42A5F5] transition-colors text-sm">
+              <Link href="/register" className="block text-gray-300 hover:text-secondary transition-colors text-sm">
                 انضم للنادي
               </Link>
             </div>

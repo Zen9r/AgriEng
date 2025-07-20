@@ -1,3 +1,4 @@
+// contact/page.tsx (الكود المعدّل)
 "use client"
 
 import React, { useState } from "react";
@@ -15,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Mail, Phone, MapPin, Clock, Send, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
-import { Label } from "@radix-ui/react-label";
+import { Label } from "@/components/ui/label"; // تم استخدام Label من ui/label
 
 // --- Schema & Types ---
 const contactFormSchema = z.object({
@@ -67,8 +68,9 @@ export default function ContactPage() {
   const itemVariants = { hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } };
 
   return (
-    <main className="relative overflow-hidden bg-gray-50 dark:bg-gray-900" dir="rtl">
-      <section className="bg-gradient-to-r from-[#4CAF50] to-[#42A5F5] text-white py-20">
+    <main className="relative overflow-hidden bg-background" dir="rtl">
+      {/* تم تغيير الخلفية لتستخدم ألوان الثيم */}
+      <section className="bg-gradient-to-r from-primary to-secondary text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.h1 initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="text-4xl md:text-5xl font-bold mb-4">تواصل معنا</motion.h1>
           <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="text-xl opacity-90 max-w-2xl mx-auto">نحن هنا للإجابة على استفساراتك واقتراحاتك.</motion.p>
@@ -80,30 +82,32 @@ export default function ContactPage() {
           <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             
             <div className="lg:col-span-1 space-y-8">
-              {[{icon: <Mail/>, title: "البريد الإلكتروني", content: <a href="mailto:club@example.com" className="hover:underline">club@example.com</a>},
-               {icon: <Phone/>, title: "الهاتف", content: <a href="tel:+966550965879" className="hover:underline" dir="ltr">+966 55 096 5879</a>},
-               {icon: <MapPin/>, title: "العنوان", content: <div><a href="https://maps.app.goo.gl/yourlink" target="_blank" rel="noopener noreferrer" className="hover:underline">كلية علوم الأغذية والزراعة</a><br /><a href="https://ksu.edu.sa" target="_blank" rel="noopener noreferrer" className="hover:underline">جامعة الملك سعود</a></div>},
+              {[{icon: <Mail/>, title: "البريد الإلكتروني", content: <a href="mailto:AgriEng.club@ksu.edu.sa" className="hover:text-primary transition-colors">AgriEng.club@ksu.edu.sa</a>},
+               {icon: <Phone/>, title: "الهاتف", content: <a href="tel:+966114678451" className="hover:text-primary transition-colors" dir="ltr">+966 11 467 8451</a>},
+               {icon: <MapPin/>, title: "العنوان", content: <div><a href="https://maps.app.goo.gl/yourlink" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">كلية علوم الأغذية والزراعة</a><br /><a href="https://ksu.edu.sa" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">جامعة الملك سعود</a></div>},
                {icon: <Clock/>, title: "ساعات العمل", content: <p>الأحد - الخميس: 8ص - 4م</p>}].map((item, i) => (
                 <motion.div variants={itemVariants} key={i}>
-                  <Card className="text-center sm:text-right shadow-md hover:shadow-lg transition-shadow">
-                    <CardHeader><CardTitle className="flex justify-center sm:justify-start items-center text-xl text-gray-700 dark:text-gray-200">{React.cloneElement(item.icon, { className: 'w-6 h-6 ml-3 text-[#4CAF50]' })}{item.title}</CardTitle></CardHeader>
-                    <CardContent className="text-gray-600 dark:text-gray-300">{item.content}</CardContent>
+                  <Card className="text-center sm:text-right shadow-md hover:shadow-lg transition-shadow bg-card">
+                    {/* تم تغيير لون الأيقونة */}
+                    <CardHeader><CardTitle className="flex justify-center sm:justify-start items-center text-xl text-card-foreground">{React.cloneElement(item.icon, { className: 'w-6 h-6 ml-3 text-secondary' })}{item.title}</CardTitle></CardHeader>
+                    <CardContent className="text-muted-foreground">{item.content}</CardContent>
                   </Card>
                 </motion.div>
               ))}
             </div>
 
             <motion.div variants={itemVariants} className="lg:col-span-2">
-              <Card className="shadow-lg">
+              <Card className="shadow-lg bg-card">
                 <CardHeader>
-                  <CardTitle className="text-2xl text-[#4CAF50] dark:text-[#66BB6A]">أرسل لنا رسالة</CardTitle>
-                  <p className="text-gray-600 dark:text-gray-400">املأ النموذج أدناه وسنتواصل معك في أقرب وقت ممكن.</p>
+                  {/* تم تغيير لون العنوان */}
+                  <CardTitle className="text-2xl text-primary">أرسل لنا رسالة</CardTitle>
+                  <p className="text-muted-foreground">املأ النموذج أدناه وسنتواصل معك في أقرب وقت ممكن.</p>
                 </CardHeader>
                 <CardContent>
                   <AnimatePresence>
                     {formStatus && (
                       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                          <Alert variant={formStatus.type === 'error' ? 'destructive' : 'default'} className={formStatus.type === 'success' ? 'border-green-500 text-green-700 dark:border-green-600 dark:text-green-300' : ''}>
+                          <Alert variant={formStatus.type === 'error' ? 'destructive' : 'default'} className={formStatus.type === 'success' ? 'border-green-500 bg-green-50 text-green-800' : ''}>
                               {formStatus.type === 'success' ? <CheckCircle className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
                               <AlertTitle>{formStatus.type === 'error' ? 'حدث خطأ' : 'تم بنجاح!'}</AlertTitle>
                               <AlertDescription>{formStatus.message}</AlertDescription>
@@ -115,31 +119,30 @@ export default function ContactPage() {
                   <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <Label htmlFor="name" className="mb-2 block">الاسم الكامل *</Label>
+                        <Label htmlFor="name" className="mb-2 block text-sm font-medium text-foreground">الاسم الكامل *</Label>
                         <Input id="name" {...register('name')} placeholder="أدخل اسمك الكامل"/>
                         {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
                       </div>
                       <div>
-                        <Label htmlFor="email" className="mb-2 block">البريد الإلكتروني *</Label>
+                        <Label htmlFor="email" className="mb-2 block text-sm font-medium text-foreground">البريد الإلكتروني *</Label>
                         <Input id="email" type="email" {...register('email')} placeholder="you@example.com" className="force-ltr"/>
                         {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                       </div>
                     </div>
-
-                    <div>
-                      <Label htmlFor="phone" className="mb-2 block">رقم الهاتف (اختياري)</Label>
-                      <Input id="phone" type="tel" {...register('phone')} placeholder="05xxxxxxxx" className="force-ltr"/>
-                    </div>
                     
-                    {/* ## التعديل هنا: تم تبديل مكان العنوان والموضوع ## */}
+                     <div>
+                        <Label htmlFor="phone" className="mb-2 block text-sm font-medium text-foreground">رقم الهاتف (اختياري)</Label>
+                        <Input id="phone" type="tel" {...register('phone')} placeholder="05xxxxxxxx" className="force-ltr"/>
+                      </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                        <div>
-                        <Label htmlFor="title" className="mb-2 block">العنوان *</Label>
+                        <Label htmlFor="title" className="mb-2 block text-sm font-medium text-foreground">العنوان *</Label>
                         <Input id="title" {...register('title')} placeholder="اكتب عنوانًا واضحًا لرسالتك..."/>
                         {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title.message}</p>}
                       </div>
                       <div>
-                        <Label className="mb-2 block">الموضوع (اختياري)</Label>
+                        <Label className="mb-2 block text-sm font-medium text-foreground">الموضوع (اختياري)</Label>
                         <Controller name="subject" control={control} render={({ field }) => (
                             <Select onValueChange={field.onChange} value={field.value}>
                                 <SelectTrigger><SelectValue placeholder="اختر موضوع الرسالة" /></SelectTrigger>
@@ -153,12 +156,13 @@ export default function ContactPage() {
                     </div>
                     
                     <div>
-                      <Label htmlFor="message" className="mb-2 block">الرسالة *</Label>
+                      <Label htmlFor="message" className="mb-2 block text-sm font-medium text-foreground">الرسالة *</Label>
                       <Textarea id="message" {...register('message')} placeholder="اكتب تفاصيل رسالتك هنا..." rows={5}/>
                       {errors.message && <p className="text-red-500 text-xs mt-1">{errors.message.message}</p>}
                     </div>
 
-                    <Button type="submit" className="w-full bg-[#4CAF50] hover:bg-[#45a049] text-white py-3 text-lg font-semibold" disabled={isSubmitting}>
+                    {/* تم تغيير لون الزر */}
+                    <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 text-lg font-semibold" disabled={isSubmitting}>
                       {isSubmitting ? <Loader2 className="animate-spin" /> : <Send className="ml-2 h-5 w-5"/>}
                       {isSubmitting ? 'جارٍ الإرسال...' : 'إرسال الرسالة'}
                     </Button>

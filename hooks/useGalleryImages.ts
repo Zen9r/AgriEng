@@ -5,11 +5,12 @@ import { supabase } from '@/lib/supabaseClient';
 // واجهة البيانات لصورة المعرض
 export interface GalleryImage {
   id: number;
-  image_url: string;
-  alt_text: string;
-  category: string;
   created_at: string;
+  image_url: string | null;
+  alt_text: string | null;
+  category: string | null; 
 }
+
 
 /**
  * دالة لجلب كل صور المعرض، مرتبة حسب تاريخ الإنشاء

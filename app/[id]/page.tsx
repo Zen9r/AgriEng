@@ -1,63 +1,115 @@
-//app/[id]/page.tsx (صفحة التفاصيل)
-
-
+// app/events/[id]/page.tsx
 "use client"
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Calendar, Clock, MapPin, Users, Tag, ArrowRight, CheckCircle, XCircle, Clock as ClockIcon } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import Link from 'next/link';
 
+// UI Components & Icons
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Calendar, Clock, MapPin, Users, Tag, ArrowRight, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+
+// ✅ This interface perfectly matches the output of our new database function
 interface Event {
   id: number;
-  title: string;
-  description: string;
-  details: string | null;
-  start_time: string;
-  end_time: string;
-  location: string;
+  created_at: string;
+  team_id: string | null;
+  title: string | null;
+  description: string | null;
+  location: string | null;
+  start_time: string | null;
+  end_time: string | null;
   image_url: string | null;
-  category: string | null;
-  max_attendees: number | null;
   check_in_code: string | null;
+  category: string | null;
+  details: string | null;
   organizer_whatsapp_link: string | null;
-  registered_attendees?: number;
+  max_attendees: number | null;
+  report_id: string | null;
+  registered_attendees: number;
 }
 
-const CheckInForm = ({ onConfirm }: { onConfirm: (code: string) => void }) => {
-  const [code, setCode] = useState('');
+// Component for 6-digit PIN input
+const PinInput = ({ onComplete }: { onComplete: (pin: string) => void }) => {
+  const [pin, setPin] = useState<string[]>(Array(6).fill(''));
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  useEffect(() => {
+    inputRefs.current = inputRefs.current.slice(0, 6);
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const { value } = e.target;
+    if (/^[0-9]$/.test(value)) {
+      const newPin = [...pin];
+      newPin[index] = value;
+      setPin(newPin);
+      
+      const fullPin = newPin.join('');
+      if (fullPin.length === 6) {
+        onComplete(fullPin);
+      } else if (index < 5) {
+        inputRefs.current[index + 1]?.focus();
+      }
+    } else if (value === '') {
+      const newPin = [...pin];
+      newPin[index] = '';
+      setPin(newPin);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (e.key === 'Backspace' && !pin[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const paste = e.clipboardData.getData('text');
+    if (/^[0-9]{6}$/.test(paste)) {
+      const newPin = paste.split('');
+      setPin(newPin);
+      onComplete(paste);
+      inputRefs.current[5]?.focus();
+    }
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">كود التحقق</label>
-        <input
-          type="text"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
-          placeholder="أدخل كود التحقق"
+    <div dir="ltr" className="flex justify-center gap-2 md:gap-3">
+      {pin.map((digit, index) => (
+        <Input
+          key={index}
+          ref={(el) => { inputRefs.current[index] = el; }}
+          type="tel"
+          maxLength={1}
+          value={digit}
+          onChange={(e) => handleChange(e, index)}
+          onKeyDown={(e) => handleKeyDown(e, index)}
+          onPaste={index === 0 ? handlePaste : undefined}
+          className="w-12 h-14 text-center text-2xl font-bold rounded-md aspect-square"
+          aria-label={`Digit ${index + 1}`}
         />
+      ))}
+    </div>
+  );
+};
+
+const CheckInForm = ({ onConfirm }: { onConfirm: (code: string) => void }) => {
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2 text-center">
+        <Label className="text-foreground font-semibold">كود التحقق من الحضور</Label>
+        <p className="text-sm text-muted-foreground">أدخل الكود المكون من 6 أرقام الذي تم تزويدك به.</p>
       </div>
-      <Button 
-        className="w-full h-12 text-lg bg-green-600 hover:bg-green-700"
-        onClick={() => onConfirm(code)}
-      >
-        تأكيد الحضور
-      </Button>
+      <PinInput onComplete={onConfirm} />
     </div>
   );
 };
@@ -66,10 +118,7 @@ export default function EventDetailPage() {
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
-  const [registrationStatus, setRegistrationStatus] = useState<
-    'not_registered' | 'registered' | 'attended'
-  >('not_registered');
-  
+  const [registrationStatus, setRegistrationStatus] = useState<'not_registered' | 'registered' | 'attended'>('not_registered');
   const [isOrganizerModalOpen, setOrganizerModalOpen] = useState(false); 
   
   const router = useRouter();
@@ -79,323 +128,198 @@ export default function EventDetailPage() {
   useEffect(() => {
     const fetchEvent = async () => {
       if (!id) return;
+      const eventIdAsNumber = parseInt(id, 10);
+      if (isNaN(eventIdAsNumber)) {
+        setLoading(false);
+        setEvent(null);
+        toast.error("معرف الفعالية غير صالح.");
+        return;
+      }
       setLoading(true);
-      
       try {
         const { data: { user } } = await supabase.auth.getUser();
         setUser(user);
 
-        const { data: eventData, error: eventError } = await supabase
-          .from('events')
-          .select('*')
-          .eq('id', id)
-          .single();
+        // 🌟 FIX: We use a type assertion `as any` on the function name to bypass the outdated list,
+        // and then we explicitly tell TypeScript the expected return type with `<Event>`.
+        const { data, error: eventError } = await supabase
+          .rpc('get_event_details' as any, { p_event_id: eventIdAsNumber });
+
+        // Since .rpc with a single object return doesn't have .single(), we check the result directly.
+        const eventData = Array.isArray(data) ? data[0] : data;
 
         if (eventError || !eventData) {
+          console.error("Supabase RPC error:", eventError);
+          toast.error("لم يتم العثور على الفعالية أو حدث خطأ.");
           setLoading(false);
           setEvent(null);
           return;
         }
 
-        const { count: attendeesCount } = await supabase
-          .from('event_registrations')
-          .select('*', { count: 'exact', head: true })
-          .eq('event_id', id);
-
         if (user) {
-          const { data: registration } = await supabase
-            .from('event_registrations')
-            .select('status')
-            .eq('user_id', user.id)
-            .eq('event_id', id)
-            .maybeSingle();
-
+          const { data: registration } = await supabase.from('event_registrations').select('status').eq('user_id', user.id).eq('event_id', eventIdAsNumber).maybeSingle();
           setRegistrationStatus(registration?.status === 'attended' ? 'attended' : registration ? 'registered' : 'not_registered');
         }
+        
+        // This is now safe because we've told TypeScript what to expect from the RPC call.
+        setEvent(eventData as Event);
 
-        setEvent({ ...eventData, registered_attendees: attendeesCount ?? 0 });
-        setLoading(false);
       } catch (error) {
-        setLoading(false);
         toast.error('حدث خطأ في جلب بيانات الفعالية');
+        console.error("Catch error:", error);
+      } finally {
+        setLoading(false);
       }
     };
-
     fetchEvent();
   }, [id]);
 
   const handleAttendEvent = async (eventId: number, role: 'attendee' | 'organizer') => {
-  if (!user || !event) return;
-
-  const toastId = toast.loading('جارٍ تسجيلك...');
-  try {
-    const { data: existingRegistration } = await supabase.from('event_registrations').select().eq('user_id', user.id).eq('event_id', eventId).maybeSingle();
-    if (existingRegistration) {
-      return toast.error('لقد سجلت في هذه الفعالية مسبقاً', { id: toastId });
-    }
-
-    if (event.max_attendees && (event.registered_attendees ?? 0) >= event.max_attendees) {
-      return toast.error('لا توجد مقاعد متاحة', { id: toastId });
-    }
-
-    // التعديل الرئيسي: نمرر الدور الذي تم اختياره عند إضافة سجل جديد
-    const { error } = await supabase.from('event_registrations').insert({
-      user_id: user.id,
-      event_id: eventId,
-      status: 'registered',
-      role: role // << تم إضافة الدور هنا
-    });
-
-    if (error) throw error;
-    
-    setEvent(prev => prev ? { ...prev, registered_attendees: (prev.registered_attendees || 0) + 1 } : null);
-    setRegistrationStatus('registered');
-    
-    if (role === 'organizer') {
-      toast.dismiss(toastId); // إخفاء رسالة "جارٍ التسجيل"
-      setOrganizerModalOpen(true); // إظهار الرسالة المنبثقة للمنظم
-    } else {
-      toast.success('تم التسجيل في الفعالية بنجاح!', { id: toastId }); // إظهار رسالة النجاح العادية للحضور
-    }
-  } catch (error: any) {
-    toast.error(error.message || 'حدث خطأ أثناء التسجيل', { id: toastId });
-  }
-};
-  const handleCheckIn = async (verificationCode: string) => {
+    if (!user || !event) return;
+    const toastId = toast.loading('جارٍ تسجيلك...');
     try {
-      if (verificationCode.toLowerCase() !== event!.check_in_code?.toLowerCase()) {
+      const { data: existingRegistration } = await supabase.from('event_registrations').select().eq('user_id', user.id).eq('event_id', eventId).maybeSingle();
+      if (existingRegistration) {
+        toast.error('لقد سجلت في هذه الفعالية مسبقاً', { id: toastId });
+        return;
+      }
+      if (event.max_attendees && (event.registered_attendees ?? 0) >= event.max_attendees) {
+        toast.error('لا توجد مقاعد متاحة', { id: toastId });
+        return;
+      }
+      const { error } = await supabase.from('event_registrations').insert({ user_id: user.id, event_id: eventId, status: 'registered', role: role });
+      if (error) throw error;
+      setEvent(prev => prev ? { ...prev, registered_attendees: (prev.registered_attendees || 0) + 1 } : null);
+      setRegistrationStatus('registered');
+      if (role === 'organizer') {
+        toast.dismiss(toastId);
+        setOrganizerModalOpen(true);
+      } else {
+        toast.success('تم التسجيل في الفعالية بنجاح!', { id: toastId });
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'حدث خطأ أثناء التسجيل', { id: toastId });
+    }
+  };
+
+  const handleCheckIn = async (verificationCode: string) => {
+    if (!event || !user) return;
+    const toastId = toast.loading("جارٍ التحقق...");
+    try {
+      if (verificationCode.toLowerCase() !== event.check_in_code?.toLowerCase()) {
         throw new Error("كود التحقق غير صحيح");
       }
-
-      const { error } = await supabase
-        .from('event_registrations')
-        .update({ status: 'attended' })
-        .eq('user_id', user.id)
-        .eq('event_id', event!.id);
-
+      const { error } = await supabase.from('event_registrations').update({ status: 'attended' }).eq('user_id', user.id).eq('event_id', event.id);
       if (error) throw error;
-
       setRegistrationStatus('attended');
-      toast.success('تم التحقق من حضورك بنجاح!');
+      toast.success('تم التحقق من حضورك بنجاح!', { id: toastId });
     } catch (error) {
-      toast.error('فشل في التحقق من الحضور: ' + (error as Error).message);
+      toast.error('فشل التحقق: ' + (error as Error).message, { id: toastId });
     }
   };
   
- const renderActionSection = () => {
-  if (!user) {
-    return (
-      <Button 
-        className="w-full h-12 text-lg" 
-        onClick={() => router.push('/login')}
-      >
-        سجل دخولك للتسجيل
-      </Button>
-    );
-  }
+  const renderActionSection = () => {
+    if (!event || !event.start_time) return null;
+    if (!user) {
+      return <Button className="w-full h-12 text-lg" onClick={() => router.push('/login')}>سجل دخولك للتسجيل</Button>;
+    }
 
-  const now = new Date();
-  const startTime = new Date(event!.start_time);
-  const endTime = new Date(event!.end_time);
-  const checkInDeadline = new Date(endTime.getTime() + 60 * 60 * 1000);
-
-  const isCheckInWindow = now >= startTime && now <= checkInDeadline;
-  const hasCheckInEnded = now > checkInDeadline;
-  const isEventEnded = now > endTime;
-
-  switch (registrationStatus) {
-    case 'attended':
-      return (
-        <div className="flex items-center justify-center p-3 rounded-lg bg-green-100 text-green-800 font-semibold">
-          <CheckCircle className="ml-2" /> تم تأكيد حضورك
-        </div>
-      );
+    const now = new Date();
+    const startTime = new Date(event.start_time);
+    const endTime = event.end_time ? new Date(event.end_time) : null;
+    const isEventEnded = endTime ? now > endTime : false;
     
-    case 'registered':
-      if (isCheckInWindow) {
-        return <CheckInForm onConfirm={handleCheckIn} />;
-      } else if (hasCheckInEnded) {
+    const checkInDeadline = endTime ? new Date(endTime.getTime() + 60 * 60 * 1000) : null;
+    const isCheckInWindow = endTime && now >= startTime && checkInDeadline && now <= checkInDeadline;
+    const hasCheckInEnded = checkInDeadline && now > checkInDeadline;
+
+    switch (registrationStatus) {
+      case 'attended':
+        return <div className="flex items-center justify-center p-3 rounded-lg bg-green-100 text-green-800 font-semibold"><CheckCircle className="ml-2" /> تم تأكيد حضورك</div>;
+      case 'registered':
+        if (isCheckInWindow) return <CheckInForm onConfirm={handleCheckIn} />;
+        if (hasCheckInEnded) return <div className="text-center p-3 rounded-lg bg-destructive/20 text-destructive"><XCircle className="inline mr-2" />انتهى وقت التحقق من الحضور</div>;
+        return <div className="text-center p-3 rounded-lg bg-blue-100 text-blue-700"><Clock className="inline mr-2" />التحقق من الحضور لم يبدأ بعد</div>;
+      default:
+        if (isEventEnded) return <Button className="w-full h-12 text-lg" disabled>انتهت الفعالية</Button>;
+        const isFull = event.max_attendees !== null && (event.registered_attendees ?? 0) >= event.max_attendees;
         return (
-          <div className="text-center p-3 rounded-lg bg-red-100 text-red-700">
-            <XCircle className="inline mr-2" />
-            انتهى وقت التحقق من الحضور
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button className="flex-1 h-12 text-lg" onClick={() => handleAttendEvent(event.id, 'attendee')} disabled={isFull}>
+              {isFull ? 'المقاعد ممتلئة' : 'تسجيل كحضور'}
+            </Button>
+            <Button className="flex-1 h-12 text-lg" variant="secondary" onClick={() => handleAttendEvent(event.id, 'organizer')}>
+              تسجيل كمنظم
+            </Button>
           </div>
         );
-      } else {
-        return (
-          <div className="text-center p-3 rounded-lg bg-blue-100 text-blue-700">
-            <ClockIcon className="inline mr-2" />
-            التحقق من الحضور لم يبدأ بعد
-          </div>
-        );
-      }
-
-    default:
-      if (isEventEnded) return <Button className="w-full h-12 text-lg" disabled>انتهت الفعالية</Button>;
-      
-      const isFull = event!.max_attendees !== null && (event!.registered_attendees ?? 0) >= event!.max_attendees;
-      
-      // التعديل الرئيسي: عرض زرين للتسجيل
-      return (
-        <div className="flex flex-col sm:flex-row gap-2">
-          {/* زر التسجيل كحضور (باللون الأخضر) */}
-          <Button 
-            className="flex-1 h-12 text-lg bg-green-600 hover:bg-green-700" 
-            onClick={() => handleAttendEvent(event!.id, 'attendee')} 
-            disabled={isFull}
-          >
-            {isFull ? 'المقاعد ممتلئة' : 'تسجيل كحضور'}
-          </Button>
-
-          {/* زر التسجيل كمنظم (باللون الأساسي - الأزرق عادةً) */}
-          <Button 
-            className="flex-1 h-12 text-lg"
-            variant="default" // << يمكنك تغيير هذا لـ "outline" إذا أردت
-            onClick={() => handleAttendEvent(event!.id, 'organizer')} 
-          >
-            تسجيل كمنظم
-          </Button>
-        </div>
-      );
-  }
-};
+    }
+  };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
-      </div>
-    );
+    return <div className="flex items-center justify-center h-screen bg-background"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
   }
 
   if (!event) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">الفعالية غير موجودة</h1>
-        <Link href="/events">
-          <Button variant="outline">
-            <ArrowRight className="ml-2 h-4 w-4"/>
-            العودة لجميع الفعاليات
-          </Button>
-        </Link>
+      <div className="flex flex-col items-center justify-center h-screen bg-background text-foreground">
+        <h1 className="text-2xl font-bold mb-4">الفعالية غير موجودة</h1>
+        <Link href="/events"><Button variant="outline"><ArrowRight className="ml-2 h-4 w-4"/>العودة لجميع الفعاليات</Button></Link>
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen bg-background">
       <Toaster position="bottom-center"/>
-      
-      {/* صورة الخلفية الثابتة */}
       <div className="fixed inset-0 -z-10">
         <img 
-          src={event.image_url || `https://placehold.co/1200x800/e8f5e9/4caf50?text=${encodeURIComponent(event.title)}`} 
-          alt={event.title}
+          src={event.image_url || `https://placehold.co/1200x800/8c5a2b/e2d8d4?text=${encodeURIComponent(event.title ?? 'فعالية')}`} 
+          alt={event.title ?? 'صورة الفعالية'}
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-black/40" />
+        <div className="absolute inset-0 bg-black/50" />
       </div>
-
-      {/* المحتوى الرئيسي */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 relative">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* قسم التفاصيل على اليسار - ثابت لا يتغير */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           <div className="lg:col-span-1">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-              className="sticky top-24"
-            >
-              <Card className="shadow-xl bg-white/90 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-xl font-bold">معلومات الفعالية</CardTitle>
-                </CardHeader>
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} className="sticky top-28">
+              <Card className="shadow-xl bg-card/90 backdrop-blur-sm text-card-foreground">
+                <CardHeader><CardTitle className="text-xl font-bold">معلومات الفعالية</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-start gap-4">
-                    <Calendar className="mt-1 text-green-600" />
-                    <div>
-                      <h4 className="font-semibold">التاريخ</h4>
-                      <p className="text-gray-600">
-                        {new Date(event.start_time).toLocaleDateString('ar-SA', { weekday: 'long', day: 'numeric', month: 'long' })}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-4">
-                    <Clock className="mt-1 text-green-600" />
-                    <div>
-                      <h4 className="font-semibold">الوقت</h4>
-                      <p className="text-gray-600">
-                        {new Date(event.start_time).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })} -{' '}
-                        {new Date(event.end_time).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-4">
-                    <MapPin className="mt-1 text-green-600" />
-                    <div>
-                      <h4 className="font-semibold">المكان</h4>
-                      <p className="text-gray-600">{event.location}</p>
-                    </div>
-                  </div>
-                  
-                  {event.category && (
-                    <div className="flex items-start gap-4">
-                      <Tag className="mt-1 text-green-600" />
+                  {[
+                    { icon: <Calendar />, label: "التاريخ", value: event.start_time ? new Date(event.start_time).toLocaleDateString('ar-SA', { weekday: 'long', day: 'numeric', month: 'long' }) : 'غير محدد' },
+                    { icon: <Clock />, label: "الوقت", value: event.start_time ? `${new Date(event.start_time).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}${event.end_time ? ` - ${new Date(event.end_time).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}` : ''}` : 'غير محدد' },
+                    { icon: <MapPin />, label: "المكان", value: event.location },
+                    { icon: <Tag />, label: "الفئة", value: event.category },
+                    { icon: <Users />, label: "الحضور", value: `${event.registered_attendees || 0}${event.max_attendees ? ` / ${event.max_attendees}` : ''}` }
+                  ].map((item, index) => item.value && (
+                    <div key={index} className="flex items-start gap-4">
+                      <div className="mt-1 text-primary w-5 h-5 flex-shrink-0">{item.icon}</div>
                       <div>
-                        <h4 className="font-semibold">الفئة</h4>
-                        <p className="text-gray-600">{event.category}</p>
+                        <h4 className="font-semibold text-foreground">{item.label}</h4>
+                        <p className="text-muted-foreground">{item.value}</p>
                       </div>
                     </div>
-                  )}
-                  
-                  <div className="flex items-start gap-4">
-                    <Users className="mt-1 text-green-600" />
-                    <div>
-                      <h4 className="font-semibold">الحضور</h4>
-                      <p className="text-gray-600">
-                        {event.registered_attendees || 0}
-                        {event.max_attendees ? ` / ${event.max_attendees}` : ''}
-                      </p>
-                    </div>
-                  </div>
+                  ))}
                 </CardContent>
-                <CardFooter className="pt-4">
-                  {renderActionSection()}
-                </CardFooter>
+                <CardFooter className="pt-4"><div className="w-full">{renderActionSection()}</div></CardFooter>
               </Card>
             </motion.div>
           </div>
-
-          {/* قسم النص على اليمين - ثابت لا يتغير */}
           <div className="lg:col-span-2">
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <Card className="shadow-xl bg-white/90 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-2xl md:text-3xl font-bold text-gray-900">
-                    {event.title}
-                  </CardTitle>
-                </CardHeader>
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
+              <Card className="shadow-xl bg-card/90 backdrop-blur-sm text-card-foreground">
+                <CardHeader><CardTitle className="text-2xl md:text-3xl font-bold text-primary">{event.title ?? 'فعالية بدون عنوان'}</CardTitle></CardHeader>
                 <CardContent className="space-y-6">
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-800 mb-3">وصف الفعالية</h3>
-                    <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                      {event.description}
-                    </p>
+                    <h3 className="text-xl font-semibold text-foreground mb-3">وصف الفعالية</h3>
+                    <p className="text-muted-foreground leading-relaxed whitespace-pre-line">{event.description ?? 'لا يوجد وصف لهذه الفعالية.'}</p>
                   </div>
-                  
                   {event.details && (
-                    <div className="pt-6 border-t">
-                      <h3 className="text-xl font-semibold text-gray-800 mb-3">تفاصيل إضافية</h3>
-                      <div className="prose max-w-none text-gray-700 leading-relaxed whitespace-pre-line">
-                        {event.details}
-                      </div>
+                    <div className="pt-6 border-t border-border">
+                      <h3 className="text-xl font-semibold text-foreground mb-3">تفاصيل إضافية</h3>
+                      <div className="prose prose-sm md:prose-base max-w-none text-muted-foreground leading-relaxed whitespace-pre-line">{event.details}</div>
                     </div>
                   )}
                 </CardContent>
@@ -403,40 +327,23 @@ export default function EventDetailPage() {
             </motion.div>
           </div>
         </div>
-
-        {/* زر العودة - تم تعديل المسار */}
         <div className="mt-12 text-center">
-          <Link href="/events" legacyBehavior>
-            <Button variant="outline" size="lg">
-              <ArrowRight className="ml-2 h-4 w-4"/>
-              العودة لجميع الفعاليات
-            </Button>
-          </Link>
+          <Link href="/events"><Button variant="outline" size="lg" className="bg-card/80 backdrop-blur-sm hover:bg-card"><ArrowRight className="ml-2 h-4 w-4"/>العودة لجميع الفعاليات</Button></Link>
         </div>
       </div>
       <Dialog open={isOrganizerModalOpen} onOpenChange={setOrganizerModalOpen}>
-  <DialogContent className="sm:max-w-md text-center p-6 bg-white">
-    <DialogHeader>
-      <DialogTitle className="text-2xl text-green-600">تهانينا! لقد انضممت كمنظم</DialogTitle>
-      <DialogDescription className="pt-2 text-gray-600">
-        نشكر لك تطوعك للمساعدة. خطوتك التالية هي الانضمام لمجموعة الواتساب الخاصة بالمنظمين لمتابعة آخر التحديثات.
-      </DialogDescription>
-    </DialogHeader>
-    <DialogFooter className="sm:justify-center pt-4">
-      <a 
-        href={event?.organizer_whatsapp_link || '#'} 
-        target="_blank" 
-        rel="noopener noreferrer" 
-        className="w-full"
-        onClick={() => setOrganizerModalOpen(false)}
-      >
-        <Button type="button" className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg">
-          الانضمام لمجموعة الواتساب
-        </Button>
-      </a>
-    </DialogFooter>
-  </DialogContent>
-</Dialog>
+        <DialogContent className="sm:max-w-md text-center p-6 bg-card">
+          <DialogHeader>
+            <DialogTitle className="text-2xl text-primary">تهانينا! لقد انضممت كمنظم</DialogTitle>
+            <DialogDescription className="pt-2 text-muted-foreground">نشكر لك تطوعك للمساعدة. خطوتك التالية هي الانضمام لمجموعة الواتساب الخاصة بالمنظمين لمتابعة آخر التحديثات.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center pt-4">
+            <a href={event?.organizer_whatsapp_link || '#'} target="_blank" rel="noopener noreferrer" className="w-full" onClick={() => setOrganizerModalOpen(false)}>
+              <Button type="button" className="w-full h-12 text-lg">الانضمام لمجموعة الواتساب</Button>
+            </a>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

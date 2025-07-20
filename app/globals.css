@@ -4,27 +4,25 @@
 
 @layer base {
   :root {
-    --primary-green: #4caf50;
-    --secondary-blue: #42a5f5;
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 25 80% 50%; /* Brown from gears */
+    --primary-foreground: 35 100% 98%; /* Light color for text on brown */
+    --secondary: 170 45% 45%; /* Teal from leaves */
+    --secondary-foreground: 210 40% 98%; /* Light color for text on teal */
     --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 170 40% 94%;
+    --accent-foreground: 170 45% 30%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 25 80% 50%; /* Brown to match primary */
     --radius: 0.5rem;
   }
 }
@@ -62,12 +60,13 @@
 /* ======================================= */
 
 .animated-background {
+  /* Updated gradient to match the new Brown & Teal theme */
   background: linear-gradient(
     -45deg,
-    #e8f5e9,
-    #c8e6c9,
-    #e0f2f1,
-    #b2dfdb
+    hsl(25 80% 95%), /* Light Brown/Beige */
+    hsl(170 45% 95%), /* Light Teal */
+    hsl(25 60% 90%), /* Darker Beige */
+    hsl(170 40% 90%) /* Darker Teal */
   );
   background-size: 400% 400%;
   animation: gradient 15s ease infinite;

@@ -2,76 +2,54 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabaseClient';
 
+// واجهة البيانات يجب أن تطابق تمامًا ما تعيده الدالة
 export interface Event {
   id: number;
-  title: string;
-  description: string;
+  created_at: string;
+  title: string | null;
+  description: string | null;
+  location: string | null;
   start_time: string;
-  end_time: string;
-  location: string;
+  end_time: string | null;
   image_url: string | null;
-  category: string | null;
-  max_attendees: number | null;
+  team_id: string | null;
   registered_attendees: number;
-  team_id: string | null; // <-- تمت إضافة هذا السطر
+
+  // --- الحقول التي تم تصحيحها ---
+  check_in_cod: string | null; // كان check_in_code
+  category: string | null;
+  details: string | null;
+  organizer_wh: string | null;     // كان organizer_whatsapp_link
+  max_attendee: number | null;     // كان max_attendees
 }
 
+/**
+ * دالة واحدة تستدعي دالة قاعدة البيانات لجلب كل شيء مرة واحدة
+ */
 const fetchEvents = async (): Promise<Event[]> => {
-  // 1. Fetch upcoming events
-  const oneHourInMs = 60 * 60 * 1000;
-  const filterTime = new Date(Date.now() - oneHourInMs).toISOString();
+  const { data, error } = await supabase
+    .rpc('get_events_with_attendee_count');
 
-  const { data: eventsData, error: eventsError } = await supabase
-    .from('events')
-    .select('*')
-    .gt('end_time', filterTime)
-    .order('start_time', { ascending: true });
-
-  if (eventsError) {
-    console.error('Error fetching events:', eventsError);
-    throw new Error(eventsError.message);
+  if (error) {
+    console.error('Error fetching events with counts:', error);
+    throw new Error(error.message);
   }
 
-  if (!eventsData || eventsData.length === 0) {
-    return [];
-  }
-
-  // 2. Fetch registrations for these events
-  const eventIds = eventsData.map(e => e.id);
-  
-  // --- Robust way to count registrations ---
-  const { data: registrations, error: registrationsError } = await supabase
-    .from('event_registrations')
-    .select('event_id')
-    .in('event_id', eventIds)
-    .eq('status', 'registered');
-
-  if (registrationsError) {
-    console.error('Error fetching registration counts:', registrationsError);
-    // We can still proceed, the counts will just be 0
-  }
-
-  const countsMap = new Map<number, number>();
-  if (registrations) {
-    for (const reg of registrations) {
-      countsMap.set(reg.event_id, (countsMap.get(reg.event_id) || 0) + 1);
-    }
-  }
-  // --- End of robust counting logic ---
-
-  // 3. Combine data
-  const eventsWithCounts = eventsData.map(event => ({
+  // نقوم بالتحويل إلى number إذا لزم الأمر للتعامل مع bigint
+  return (data as any[] || []).map(event => ({
     ...event,
-    registered_attendees: countsMap.get(event.id) || 0,
+    id: Number(event.id),
+    registered_attendees: Number(event.registered_attendees),
   }));
-
-  return eventsWithCounts;
 };
 
+/**
+ * Hook مخصص لجلب الفعاليات باستخدام React Query
+ */
 export const useEvents = () => {
   return useQuery<Event[], Error>({
     queryKey: ['events'],
     queryFn: fetchEvents,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // البيانات تعتبر "حديثة" لمدة 5 دقائق
   });
 };

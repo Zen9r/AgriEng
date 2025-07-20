@@ -1,11 +1,10 @@
-import { createClient } from '@supabase/supabase-js'
+// lib/supabaseClient.ts
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from '../types/supabase';
 
-// هذا السطر سيعطيك خطأ واضحاً في المستقبل إذا كان هناك مشكلة في ملف .env.local
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Supabase URL and/or anonymous key are missing in .env.local file. Check variable names.")
-}
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// ٢. تمرير النوع الجديد هنا
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);

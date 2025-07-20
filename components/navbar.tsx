@@ -1,5 +1,4 @@
-// components/navbar.tsx
-
+// components/navbar.tsx (الكود المعدّل)
 "use client"
 
 import { useState, useEffect, useRef } from "react";
@@ -17,9 +16,9 @@ export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const [isVisible, setIsVisible] = useState(true);
-    const lastScrollY = useRef(0); // قيمة ابتدائية 0
-    const lastScrollDirection = useRef<'up' | 'down'>('up'); // نوع محدد وقيمة ابتدائية 'up'
-    const scrollTimeout = useRef<NodeJS.Timeout | null>(null); // نوع محدد وقيمة ابتدائية null
+    const lastScrollY = useRef(0);
+    const lastScrollDirection = useRef<'up' | 'down'>('up');
+    const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
     const router = useRouter();
 
   useEffect(() => {
@@ -28,38 +27,31 @@ export default function Navbar() {
       const scrollDirection = currentScrollY > lastScrollY.current ? 'down' : 'up';
       const scrollSpeed = Math.abs(currentScrollY - lastScrollY.current);
 
-      // تحديث حالة scrolled بناء على موضع الصفحة
       const isScrolled = currentScrollY > 10;
       if (isScrolled !== scrolled) {
         setScrolled(isScrolled);
       }
 
-      // التحكم في ظهور/اختفاء النافبار بناء على سرعة واتجاه التمرير
       if (scrollDirection !== lastScrollDirection.current) {
         lastScrollDirection.current = scrollDirection;
       }
 
       if (scrollDirection === 'down' && scrollSpeed > 10) {
-        // إذا كان التمرير للأسفل بسرعة، أخفي النافبار فوراً
         setIsVisible(false);
       } else if (scrollDirection === 'up') {
         if (scrollSpeed > 10) {
-          // إذا كان التمرير للأعلى بسرعة، أظهر النافبار فوراً
           setIsVisible(true);
         } else if (currentScrollY < 10) {
-          // إذا كان في أعلى الصفحة، أظهر النافبار
           setIsVisible(true);
         }
       }
 
       lastScrollY.current = currentScrollY;
 
-      // إلغاء المهلة السابقة إذا وجدت
       if (scrollTimeout.current) {
         clearTimeout(scrollTimeout.current);
       }
 
-      // إذا توقف التمرير، تأكد من ظهور النافبار
       scrollTimeout.current = setTimeout(() => {
         if (scrollDirection === 'up' || currentScrollY < 10) {
           setIsVisible(true);
@@ -98,17 +90,16 @@ export default function Navbar() {
         isVisible ? 'translate-y-0' : '-translate-y-full'
       }`}
     >
-      {/* بقية الكود بدون تغيير */}
       <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 h-full">
         <div className="relative flex items-center justify-center h-full">
           {/* الجزء الأيمن */}
           <div className="absolute inset-y-0 right-0 flex items-center pr-4 sm:pr-6 lg:pr-8">
-            <div className="flex-shrink-0 flex items-center space-x-4 rtl:space-x-reverse">
-              <Link href="/"><Image src="/university-logo.png" alt="شعار الجامعة" width={150} height={150} className="object-contain" /></Link>
+            <div className="flex-shrink-0 flex items-center space-x-2 rtl:space-x-reverse">
+              <Link href="/"><Image src="/university-logo.png" alt="شعار الجامعة" width={130} height={130} className="object-contain" /></Link>
               <div className="h-12 w-px bg-gray-200"></div>
-              <Link href="/" className="flex items-center space-x-3 rtl:space-x-reverse">
+              <Link href="/" className="flex items-center space-x-2 rtl:space-x-reverse">
                 <Image src="/club-logo.png" alt="شعار النادي" width={50} height={50} className="object-contain" />
-                <span className="hidden lg:block text-xl font-bold text-gray-800">النادي الثقافي الاجتماعي</span>
+                <span className="hidden lg:block text-xl font-bold text-gray-800">نادي الهندسة الزراعية</span>
               </Link>
             </div>
           </div>
@@ -117,7 +108,8 @@ export default function Navbar() {
           <div className="hidden md:block">
             <div className="flex items-baseline space-x-4 rtl:space-x-reverse">
               {navLinks.map((link) => (
-                <Link key={link.href} href={link.href} className="text-gray-700 hover:text-[#4CAF50] px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                // تم تعديل لون الـ hover
+                <Link key={link.href} href={link.href} className="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">
                   {link.label}
                 </Link>
               ))}
@@ -129,12 +121,14 @@ export default function Navbar() {
             {user ? (
               <div className="flex items-center space-x-2 rtl:space-x-reverse">
                 <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="w-4 h-4 ml-2" />تسجيل الخروج</Button>
-                <Link href="/profile"><Button size="sm" className="bg-[#4CAF50] hover:bg-[#45a049] text-white"><User className="w-4 h-4 ml-2" />ملفي الشخصي</Button></Link>
+                {/* تم تعديل لون الزر */}
+                <Link href="/profile"><Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground"><User className="w-4 h-4 ml-2" />ملفي الشخصي</Button></Link>
               </div>
             ) : (
               <div className="flex items-center space-x-2 rtl:space-x-reverse">
                 <Link href="/login"><Button variant="outline" size="sm" className="text-gray-700 border-gray-300 hover:bg-gray-50"><User className="w-4 h-4 ml-2" />تسجيل الدخول</Button></Link>
-                <Link href="/register"><Button size="sm" className="bg-[#4CAF50] hover:bg-[#45a049] text-white"><UserPlus className="w-4 h-4 ml-2" />التسجيل في النادي</Button></Link>
+                {/* تم تعديل لون الزر */}
+                <Link href="/register"><Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground"><UserPlus className="w-4 h-4 ml-2" />التسجيل في النادي</Button></Link>
               </div>
             )}
           </div>
@@ -163,13 +157,13 @@ export default function Navbar() {
                 <div className="flex flex-col space-y-3 px-3">
                   {user ? (
                     <>
-                      <Link href="/profile" onClick={() => setIsOpen(false)}><Button className="w-full justify-center bg-[#4CAF50] hover:bg-[#45a049] text-white"><User className="w-4 h-4 ml-2" />ملفي الشخصي</Button></Link>
+                      <Link href="/profile" onClick={() => setIsOpen(false)}><Button className="w-full justify-center bg-primary hover:bg-primary/90 text-primary-foreground"><User className="w-4 h-4 ml-2" />ملفي الشخصي</Button></Link>
                       <Button variant="outline" className="w-full justify-center" onClick={handleLogout}><LogOut className="w-4 h-4 ml-2" />تسجيل الخروج</Button>
                     </>
                   ) : (
                     <>
                       <Link href="/login" onClick={() => setIsOpen(false)}><Button variant="outline" className="w-full justify-center"><User className="w-4 h-4 ml-2" />تسجيل الدخول</Button></Link>
-                      <Link href="/register" onClick={() => setIsOpen(false)}><Button className="w-full justify-center bg-[#4CAF50] hover:bg-[#45a049] text-white"><UserPlus className="w-4 h-4 ml-2" />التسجيل في النادي</Button></Link>
+                      <Link href="/register" onClick={() => setIsOpen(false)}><Button className="w-full justify-center bg-primary hover:bg-primary/90 text-primary-foreground"><UserPlus className="w-4 h-4 ml-2" />التسجيل في النادي</Button></Link>
                     </>
                   )}
                 </div>
