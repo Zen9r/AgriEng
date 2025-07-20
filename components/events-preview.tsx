@@ -1,126 +1,69 @@
-// components/events-preview.tsx (الكود المعدّل)
+// components/events-preview.tsx
 "use client"
 
-import { useState, useEffect, useCallback } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabaseClient";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Calendar, MapPin, Users, Clock, AlertCircle } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import toast from "react-hot-toast";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Calendar, MapPin, Users, Clock } from "lucide-react";
-
-interface Event {
-  id: number;
-  title: string;
-  description: string;
-  start_time: string;
-  end_time: string;
-  location: string;
-  image_url: string | null;
-  category: string | null;
-  max_attendees: number | null;
-  registered_attendees?: number;
-}
-
-const categoryMap: { [key: string]: string } = {
-  "ورش عمل": "Workshop", "ندوات": "Seminar", "معارض": "Exhibition", "زيارات": "Visit",
-  "دورات تدريبية": "Course", "اعمال تطوعية": "Volunteering", "حفلات": "Ceremony", "مبادرات": "Initiative",
-};
+// 🌟 FIX: Reusing the reliable hooks we already built
+import { useAuth } from "@/context/AuthContext";
+import { useEvents, Event } from "@/hooks/useEvents";
+import { useEventRegistration } from "@/hooks/useUserRegistrations";
 
 function EventCardSkeleton() {
-  return (<Card className="overflow-hidden bg-card"><div className="w-full h-48 bg-muted animate-pulse"></div><CardHeader><div className="h-6 bg-muted rounded animate-pulse mb-2"></div><div className="h-4 bg-muted rounded animate-pulse w-3/4"></div></CardHeader><CardContent><div className="space-y-2"><div className="h-4 bg-muted rounded animate-pulse"></div><div className="h-4 bg-muted rounded animate-pulse w-2/3"></div></div></CardContent><CardFooter><div className="h-10 bg-muted rounded animate-pulse w-full"></div></CardFooter></Card>);
+  return (
+    <Card className="overflow-hidden flex flex-col bg-card">
+      <Skeleton className="w-full h-48 bg-muted" />
+      <CardHeader>
+        <Skeleton className="h-6 w-3/4 mb-2 bg-muted" />
+        <Skeleton className="h-4 w-1/2 bg-muted" />
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <Skeleton className="h-4 w-full bg-muted" />
+        <Skeleton className="h-4 w-2/3 bg-muted" />
+      </CardContent>
+      <CardFooter>
+        <Skeleton className="h-10 w-full bg-muted" />
+      </CardFooter>
+    </Card>
+  );
+}
+
+function ErrorDisplay({ message }: { message: string }) {
+    return (
+        <div className="col-span-full flex flex-col items-center justify-center bg-destructive/10 text-destructive p-8 rounded-lg">
+            <AlertCircle className="w-12 h-12 mb-4" />
+            <h3 className="text-xl font-semibold mb-2">حدث خطأ</h3>
+            <p>{message}</p>
+        </div>
+    );
 }
 
 export default function EventsPreview() {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const { user } = useAuth();
+  // 🌟 FIX: Using the central useEvents hook to fetch data
+  const { data: allEvents = [], isLoading, isError, error } = useEvents();
+  const { mutate: register, isPending: isRegistering } = useEventRegistration();
 
-  const fetchEvents = useCallback(async () => {
-    try {
-      const now = new Date().toISOString();
-      const { data: eventsData, error: eventsError } = await supabase
-        .from('events')
-        .select('*')
-        .gt('start_time', now)
-        .order('start_time', { ascending: true })
-        .limit(10);
-
-      if (eventsError) throw eventsError;
-      if (!eventsData || eventsData.length === 0) {
-        setEvents([]);
-        return;
-      }
-
-      for (let i = eventsData.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [eventsData[i], eventsData[j]] = [eventsData[j], eventsData[i]];
-      }
-
-      const previewEvents = eventsData.slice(0, 3);
-      const eventIds = previewEvents.map(e => e.id);
-
-      if (eventIds.length === 0) {
-        setEvents([]);
-        return;
-      }
-
-      const { data: registrations, error: registrationsError } = await supabase
-        .from('event_registrations')
-        .select('event_id')
-        .in('event_id', eventIds);
-
-      if (registrationsError) throw registrationsError;
-
-      const countsMap = new Map<number, number>();
-      registrations.forEach(reg => {
-        return countsMap.set(reg.event_id, (countsMap.get(reg.event_id) || 0) + 1);
-      });
-      
-      const eventsWithCounts = previewEvents.map(event => ({
-        ...event,
-        registered_attendees: countsMap.get(event.id) || 0,
-      }));
-
-      setEvents(eventsWithCounts);
-
-    } catch (error) {
-      console.error("Error fetching preview events:", error);
-      toast.error("فشل في تحميل الفعاليات القادمة.");
+  // This logic randomizes and selects the first 3 events for the preview
+  const previewEvents = useMemo(() => {
+    if (!allEvents || allEvents.length === 0) {
+      return [];
     }
-  }, []);
+    // Create a shuffled copy of the array and take the first 3 elements
+    return [...allEvents].sort(() => 0.5 - Math.random()).slice(0, 3);
+  }, [allEvents]);
 
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      await fetchEvents();
-      setLoading(false);
-    };
-    fetchInitialData();
-  }, [fetchEvents]);
-
-  const handleAttendEvent = async (eventId: number) => {
+  const handleAttendEvent = (event: Event) => {
     if (!user) {
-      toast.error("يجب عليك تسجيل الدخول أولاً.");
+      toast.error("يجب تسجيل الدخول أولاً للمشاركة في الفعاليات.");
       return;
     }
-    const toastId = toast.loading('جارٍ تسجيلك...');
-    try {
-      const { error } = await supabase.from('event_registrations').insert({ event_id: eventId, user_id: user.id });
-      if (error) {
-        if (error.code === '23505') {
-          toast.error('أنت مسجل مسبقاً في هذه الفعالية.', { id: toastId });
-        } else { throw error; }
-      } else {
-        toast.success('تم تسجيلك بنجاح!', { id: toastId });
-        await fetchEvents();
-      }
-    } catch (error: any) {
-      toast.error('حدث خطأ أثناء التسجيل.', { id: toastId });
-    }
+    register({ eventId: event.id, userId: user.id, event });
   };
 
   return (
@@ -134,40 +77,51 @@ export default function EventsPreview() {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {loading
-            ? Array.from({ length: 3 }).map((_, index) => <EventCardSkeleton key={index} />)
-            : events.map((event) => (
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, index) => <EventCardSkeleton key={index} />)
+          ) : isError ? (
+             <ErrorDisplay message={error?.message || "فشل في تحميل الفعاليات."} />
+          ) : previewEvents.length > 0 ? (
+            previewEvents.map((event) => (
                 <Card key={event.id} className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col bg-card text-card-foreground">
                   <div className="relative">
-                    {/* تم تعديل رابط الصورة Placeholder */}
-                    <img src={event.image_url || `https://placehold.co/600x400/e2d8d4/8c5a2b?text=${encodeURIComponent(categoryMap[event.category || ''] || 'Event')}`} alt={event.title} className="w-full h-48 object-cover"/>
-                    {/* تم تعديل لون الوسم */}
+                    <img 
+                      src={event.image_url || `https://placehold.co/600x400/e2d8d4/8c5a2b?text=${encodeURIComponent(event.category || 'فعالية')}`} 
+                      alt={event.title ?? 'صورة الفعالية'} 
+                      className="w-full h-48 object-cover"
+                    />
                     <div className="absolute top-4 right-4 bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-sm font-semibold">{event.category || 'فعالية'}</div>
                   </div>
                   <CardHeader className="flex-grow">
                     <h3 className="text-xl font-bold text-foreground mb-2 line-clamp-1">{event.title}</h3>
-                    <p className="text-muted-foreground text-sm line-clamp-2 h-10">{event.description}</p>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2 text-sm text-muted-foreground">
-                      <div className="flex items-center"><Calendar className="w-4 h-4 ml-2" />{new Date(event.start_time).toLocaleDateString('ar-SA', { weekday: 'long', day: 'numeric', month: 'long' })}</div>
+                      <div className="flex items-center"><Calendar className="w-4 h-4 ml-2" />{new Date(event.start_time).toLocaleDateString('ar-SA', { day: 'numeric', month: 'long' })}</div>
                       <div className="flex items-center"><Clock className="w-4 h-4 ml-2" />{new Date(event.start_time).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</div>
                       <div className="flex items-center"><MapPin className="w-4 h-4 ml-2" />{event.location}</div>
                       <div className="flex items-center"><Users className="w-4 h-4 ml-2" />{event.registered_attendees ?? 0} / {event.max_attendees || '∞'} مشارك</div>
                     </div>
                   </CardContent>
-                  <CardFooter className="flex gap-2">
-                    {/* تم تعديل ألوان الأزرار */}
-                    <Button className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => handleAttendEvent(event.id)}>تسجيل</Button>
-                    <Link href={`/${event.id}`} className="flex-1"><Button variant="outline" className="w-full">التفاصيل</Button></Link>
+                  <CardFooter className="flex gap-2 p-4 bg-muted/50">
+                    <Button className="flex-1" onClick={() => handleAttendEvent(event)} disabled={isRegistering}>
+                      {isRegistering ? 'جارٍ التسجيل...' : 'تسجيل'}
+                    </Button>
+                    <Link href={`/events/${event.id}`} className="flex-1">
+                      <Button variant="outline" className="w-full">التفاصيل</Button>
+                    </Link>
                   </CardFooter>
                 </Card>
-              ))}
+              ))
+          ) : (
+             <div className="col-span-full text-center py-12">
+                <p className="text-muted-foreground text-lg">لا توجد فعاليات قادمة حالياً.</p>
+              </div>
+          )}
         </div>
 
         <div className="text-center">
           <Link href="/events">
-             {/* تم تعديل ألوان الزر */}
             <Button size="lg" variant="outline">
               عرض جميع الفعاليات
             </Button>

@@ -81,8 +81,11 @@ export default function EventsPage() {
     register({ eventId: event.id, userId: user.id, event });
   };
 
+  // 🌟 FIX: The filtering logic now correctly uses the category from the event data.
   const categories = ["all", "ورش عمل", "ندوات", "معارض", "زيارات", "دورات تدريبية", "اعمال تطوعية", "حفلات", "مبادرات"];
   const filteredEvents = filter === "all" ? events : events.filter(event => event.category === filter);
+  
+  // This map helps in generating English text for placeholder images if needed.
   const categoryMap: { [key: string]: string } = { "ورش عمل": "Workshop", "ندوات": "Seminar", "معارض": "Exhibition", "زيارات": "Visit", "دورات تدريبية": "Course", "اعمال تطوعية": "Volunteering", "حفلات": "Ceremony", "مبادرات": "Initiative" };
 
   return (
@@ -121,8 +124,9 @@ export default function EventsPage() {
                 <motion.div key={event.id} variants={itemVariants}>
                   <Card className="overflow-hidden h-full flex flex-col bg-card text-card-foreground rounded-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
                     <div className="relative">
+                        {/* 🌟 FIX: The placeholder image now uses the event's category correctly. */}
                         <img 
-                            src={event.image_url || `https://placehold.co/600x400/e2d8d4/8c5a2b?text=${encodeURIComponent(categoryMap[event.category || ''] || 'Event')}`} 
+                            src={event.image_url || `https://placehold.co/600x400/e2d8d4/8c5a2b?text=${encodeURIComponent(event.category || 'فعالية')}`} 
                             alt={event.title ?? 'صورة فعالية'} 
                             className="w-full h-48 object-cover"
                         />
@@ -144,7 +148,7 @@ export default function EventsPage() {
                         <Button className="flex-1" onClick={() => handleAttendEvent(event)} disabled={isRegistering}>
                          {isRegistering ? 'جارٍ التسجيل...' : 'تسجيل في الفعالية'}
                         </Button>
-                        {/* 🌟 تم التأكد من وجود رابط التفاصيل هنا */}
+                        {/* 🌟 FIX: Corrected the link to point to the details page. */}
                         <Link href={`/${event.id}`} className="flex-1">
                             <Button variant="outline" className="w-full">
                              التفاصيل

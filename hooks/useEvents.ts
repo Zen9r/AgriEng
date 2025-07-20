@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabaseClient';
 
-// واجهة البيانات يجب أن تطابق تمامًا ما تعيده الدالة
+// This interface now matches the output of our new `get_all_events` function
 export interface Event {
   id: number;
   created_at: string;
@@ -12,44 +12,41 @@ export interface Event {
   start_time: string;
   end_time: string | null;
   image_url: string | null;
+  check_in_code: string | null;
   team_id: string | null;
-  registered_attendees: number;
-
-  // --- الحقول التي تم تصحيحها ---
-  check_in_cod: string | null; // كان check_in_code
   category: string | null;
   details: string | null;
-  organizer_wh: string | null;     // كان organizer_whatsapp_link
-  max_attendee: number | null;     // كان max_attendees
+  organizer_whatsapp_link: string | null;
+  max_attendees: number | null;
+  registered_attendees: number;
 }
 
+
 /**
- * دالة واحدة تستدعي دالة قاعدة البيانات لجلب كل شيء مرة واحدة
+ * Fetches all upcoming events using the new, reliable `get_all_events` database function.
  */
 const fetchEvents = async (): Promise<Event[]> => {
+  // 🌟 FIX: We use a type assertion `as any` to bypass the outdated function list
+  // and then cast the result to ensure TypeScript knows the data shape.
   const { data, error } = await supabase
-    .rpc('get_events_with_attendee_count');
+    .rpc('get_all_events' as any);
 
   if (error) {
-    console.error('Error fetching events with counts:', error);
+    console.error('Error fetching events with get_all_events:', error);
     throw new Error(error.message);
   }
 
-  // نقوم بالتحويل إلى number إذا لزم الأمر للتعامل مع bigint
-  return (data as any[] || []).map(event => ({
-    ...event,
-    id: Number(event.id),
-    registered_attendees: Number(event.registered_attendees),
-  }));
+  // The data from a TABLE function is an array, so we cast it to ensure type safety.
+  return (data as Event[]) || [];
 };
 
 /**
- * Hook مخصص لجلب الفعاليات باستخدام React Query
+ * Custom hook to fetch events using React Query.
  */
 export const useEvents = () => {
   return useQuery<Event[], Error>({
     queryKey: ['events'],
     queryFn: fetchEvents,
-    staleTime: 5 * 60 * 1000, // البيانات تعتبر "حديثة" لمدة 5 دقائق
+    staleTime: 5 * 60 * 1000, // Data is considered fresh for 5 minutes
   });
 };
