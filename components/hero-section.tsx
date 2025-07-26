@@ -59,16 +59,14 @@ export default function HeroSection() {
             </Link>
             
             <Link href="/register">
-               {/* تم تغيير لون الزر ليتناسب مع الثيم */}
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white text-white hover:bg-white hover:text-primary font-semibold px-8 py-3 text-lg"
-              >
-                <Users className="w-5 h-5 ml-2" />
-                الانضمام للنادي
-              </Button>
-            </Link>
+    <Button
+        size="lg"
+        className="bg-primary text-white hover:bg-white hover:text-primary font-semibold px-8 py-3 text-lg"
+    >
+        <Users className="w-5 h-5 ml-2" />
+        الانضمام للنادي
+    </Button>
+</Link>
           </motion.div>
         </div>
       </div>
