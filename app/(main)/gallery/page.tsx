@@ -24,9 +24,8 @@ function ErrorDisplay({ message }: { message: string }) {
 
 // Static categories for filtering
 const allStaticCategories = [
-  "كل الفعاليات", "ورش عمل", "ندوات", "معارض", "زيارات", 
-  "دورات تدريبية", "اعمال تطوعية", "حفلات", "مبادرات", 
-  "مؤتمرات", "رحلات", "مسابقات"
+  "كل الفعاليات", "ورش عمل", "دورات تدريبية", "زيارات", 
+  "اعمال تطوعية", "معارض", "مسابقات", "حفلات", "مؤتمرات"
 ];
 
 // Animation Variants
@@ -98,7 +97,7 @@ export default function GalleryPage() {
       {/* Filter Tabs Section with new theme */}
       <section className="py-4 bg-background/80 backdrop-blur-sm border-b border-border sticky top-[80px] md:top-[96px] z-20 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex overflow-x-auto pb-2 space-x-2 space-x-reverse">
+            <div className="flex justify-center overflow-x-auto pb-2 space-x-2 space-x-reverse">
             {allStaticCategories.map((category) => (
                 <motion.button
                 key={category}

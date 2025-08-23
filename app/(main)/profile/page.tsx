@@ -268,7 +268,7 @@ export default function ProfilePage() {
 
                 {/* Updated Tabs container to use theme colors */}
                 <div className="flex-grow border bg-muted rounded-xl p-1 overflow-x-auto">
-                    <div className="flex items-center" style={{ gap: '4px' }}>
+                    <div className="flex items-center justify-center" style={{ gap: '4px' }}>
                         {visibleTabs.map(tab => (
                             <motion.button
                                 key={tab.id}

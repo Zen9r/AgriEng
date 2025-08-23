@@ -34,7 +34,7 @@ type DatabaseEvent = {
   location: string;
   start_time: string;
   end_time: string;
-  category: 'ورش عمل' | 'ندوات' | 'معارض' | 'زيارات' | 'دورات تدريبية' | 'اعمال تطوعية' | 'حفلات' | 'مبادرات';
+  category: 'ورش عمل' | 'معارض' | 'زيارات' | 'دورات تدريبية' | 'اعمال تطوعية' | 'مسابقات' | 'مؤتمرات';
   image_url: string | null;
   organizer_whatsapp_link: string | null;
   max_attendees: number | null;
@@ -52,7 +52,7 @@ const eventFormSchema = z.object({
   endDate: z.date({ required_error: "تاريخ الانتهاء إجباري." }),
   endHour: z.string({ required_error: "الساعة إجبارية." }),
   endMinute: z.string({ required_error: "الدقيقة إجبارية." }),
-  category: z.enum(['ورش عمل', 'ندوات', 'معارض', 'زيارات', 'دورات تدريبية', 'اعمال تطوعية', 'حفلات', 'مبادرات']),
+  category: z.enum(['ورش عمل', 'معارض', 'زيارات', 'دورات تدريبية', 'اعمال تطوعية', 'مسابقات', 'مؤتمرات']),
   max_attendees: z.preprocess(
     (val) => (String(val).trim() === '' ? undefined : Number(val)),
     z.number({ invalid_type_error: "الرجاء إدخال رقم صحيح."})
@@ -186,7 +186,7 @@ function EventForm({ mode, initialData, onSubmit, onCancel }: {
                 <Separator />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField name="category" control={form.control} render={({ field }) => (
-                        <FormItem><FormLabel>فئة الفعالية</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="اختر فئة" /></SelectTrigger></FormControl><SelectContent>{['ورش عمل', 'ندوات', 'معارض', 'زيارات', 'دورات تدريبية', 'اعمال تطوعية', 'حفلات', 'مبادرات'].map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                        <FormItem><FormLabel>فئة الفعالية</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="اختر فئة" /></SelectTrigger></FormControl><SelectContent>{['ورش عمل', 'معارض', 'زيارات', 'دورات تدريبية', 'اعمال تطوعية', 'مسابقات', 'مؤتمرات'].map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
                     )}/>
                     <FormField name="location" control={form.control} render={({ field }) => (
                         <FormItem><FormLabel>الموقع</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
@@ -237,7 +237,8 @@ export default function EventManagementTab() {
     try {
         const { data, error } = await supabase.from('events').select('*').order('created_at', { ascending: false });
         if (error) throw error;
-        setEvents(data as DatabaseEvent[]);
+        // Cast to unknown first to avoid type mismatch
+        setEvents(data as unknown as DatabaseEvent[]);
     } catch (e: any) { setError("فشل في جلب الفعاليات."); } finally { setIsLoading(false); }
   }, []);
 

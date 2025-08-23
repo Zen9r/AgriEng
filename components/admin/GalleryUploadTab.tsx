@@ -23,7 +23,7 @@ import { Textarea } from '../ui/textarea';
 // مخطط التحقق من صحة النموذج
 const galleryFormSchema = z.object({
   alt_text: z.string().min(3, "وصف الصورة إجباري."),
-  category: z.enum(['ورش عمل', 'ندوات', 'معارض', 'زيارات', 'دورات تدريبية', 'اعمال تطوعية', 'حفلات', 'مبادرات'], {
+  category: z.enum(['ورش عمل', 'معارض', 'زيارات', 'دورات تدريبية', 'اعمال تطوعية', 'مسابقات', 'مؤتمرات'], {
     required_error: "الرجاء اختيار فئة للصورة.",
   }),
   image_url: z.string().url({ message: "الرابط غير صحيح." }).min(1, "رابط الصورة أو رفعها إجباري."),
@@ -151,7 +151,7 @@ export default function GalleryUploadTab() {
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl><SelectTrigger><SelectValue placeholder="اختر الفئة المناسبة" /></SelectTrigger></FormControl>
                       <SelectContent>
-                        {['ورش عمل', 'ندوات', 'معارض', 'زيارات', 'دورات تدريبية', 'اعمال تطوعية', 'حفلات', 'مبادرات'].map(cat => (
+                        {['ورش عمل', 'معارض', 'زيارات', 'دورات تدريبية', 'اعمال تطوعية', 'مسابقات', 'مؤتمرات'].map(cat => (
                           <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                         ))}
                       </SelectContent>

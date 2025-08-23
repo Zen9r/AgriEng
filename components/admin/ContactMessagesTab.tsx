@@ -45,7 +45,18 @@ export default function ContactMessagesTab() {
     if (error) {
       toast.error("فشل جلب الرسائل.");
     } else {
-      const newMessages = data || [];
+      // Ensure all required fields exist and types match ContactMessage
+      const newMessages: ContactMessage[] = (data || []).map((msg: any) => ({
+        id: msg.id,
+        created_at: msg.created_at,
+        full_name: msg.full_name,
+        email: msg.email,
+        phone: msg.phone,
+        title: msg.title,
+        subject: msg.subject ?? null,
+        message_body: msg.message_body,
+        is_read: !!msg.is_read,
+      }));
       setMessages(newMessages);
       // إذا لم يكن هناك رسالة محددة، أو إذا كانت الرسالة المحددة لم تعد موجودة، حدد أول رسالة في القائمة
       if (newMessages.length > 0 && (!currentSelection || !newMessages.find(m => m.id === currentSelection.id))) {

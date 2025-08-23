@@ -82,11 +82,11 @@ export default function EventsPage() {
   };
 
   // 🌟 FIX: The filtering logic now correctly uses the category from the event data.
-  const categories = ["all", "ورش عمل", "ندوات", "معارض", "زيارات", "دورات تدريبية", "اعمال تطوعية", "حفلات", "مبادرات"];
+  const categories = ["all", "ورش عمل", "دورات تدريبية", "زيارات", "اعمال تطوعية", "معارض", "مسابقات", "حفلات", "مؤتمرات"];
   const filteredEvents = filter === "all" ? events : events.filter(event => event.category === filter);
   
   // This map helps in generating English text for placeholder images if needed.
-  const categoryMap: { [key: string]: string } = { "ورش عمل": "Workshop", "ندوات": "Seminar", "معارض": "Exhibition", "زيارات": "Visit", "دورات تدريبية": "Course", "اعمال تطوعية": "Volunteering", "حفلات": "Ceremony", "مبادرات": "Initiative" };
+  const categoryMap: { [key: string]: string } = { "ورش عمل": "Workshop", "معارض": "Exhibition", "زيارات": "Visit", "دورات تدريبية": "Course", "اعمال تطوعية": "Volunteering", "مسابقات": "Competition", "حفلات": "Ceremony", "مؤتمرات": "Conference" };
 
   return (
     <main className="relative overflow-hidden bg-background text-foreground">
