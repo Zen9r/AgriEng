@@ -48,11 +48,15 @@ export default function Footer() {
                {/* تم تعديل لون الأيقونات */}
               <div className="flex items-center text-gray-300">
                 <Mail className="w-5 h-5 ml-3 text-secondary" />
-                <span className="text-sm">cfas1ksu@gmail.com</span>
+                <a href="mailto:cfas1ksu@gmail.com" className="text-sm hover:text-secondary transition-colors hover:underline">
+                  cfas1ksu@gmail.com
+                </a>
               </div>
               <div className="flex items-center text-gray-300">
                 <Phone className="w-5 h-5 ml-3 text-secondary" />
-                <span className="text-sm">+966 11 467 8362</span>
+                <a href="tel:0114678362" className="text-sm hover:text-secondary transition-colors hover:underline"dir="ltr">
+                  011 467 8362
+                </a>
               </div>
               <div className="flex items-start text-gray-300">
                 <MapPin className="w-5 h-5 ml-3 mt-1 text-secondary flex-shrink-0" />
