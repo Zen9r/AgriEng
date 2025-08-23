@@ -48,11 +48,11 @@ export default function Footer() {
                {/* تم تعديل لون الأيقونات */}
               <div className="flex items-center text-gray-300">
                 <Mail className="w-5 h-5 ml-3 text-secondary" />
-                <span className="text-sm">AgriEng.club@ksu.edu.sa</span>
+                <span className="text-sm">cfas1ksu@gmail.com</span>
               </div>
               <div className="flex items-center text-gray-300">
                 <Phone className="w-5 h-5 ml-3 text-secondary" />
-                <span className="text-sm">+966 11 467 8451</span>
+                <span className="text-sm">+966 11 467 8362</span>
               </div>
               <div className="flex items-start text-gray-300">
                 <MapPin className="w-5 h-5 ml-3 mt-1 text-secondary flex-shrink-0" />

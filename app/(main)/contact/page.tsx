@@ -82,8 +82,8 @@ export default function ContactPage() {
           <motion.div variants={containerVariants} initial="hidden" animate="visible" className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             
             <div className="lg:col-span-1 space-y-8">
-              {[{icon: <Mail/>, title: "البريد الإلكتروني", content: <a href="mailto:AgriEng.club@ksu.edu.sa" className="hover:text-primary transition-colors">AgriEng.club@ksu.edu.sa</a>},
-               {icon: <Phone/>, title: "الهاتف", content: <a href="tel:+966114678451" className="hover:text-primary transition-colors" dir="ltr">+966 11 467 8451</a>},
+              {[{icon: <Mail/>, title: "البريد الإلكتروني", content: <a href="mailto:cfas1ksu@gmail.com" className="hover:text-primary transition-colors">cfas1ksu@gmail.com</a>},
+               {icon: <Phone/>, title: "الهاتف", content: <a href="tel:+966114678362" className="hover:text-primary transition-colors" dir="ltr">+966 11 467 8362</a>},
                {icon: <MapPin/>, title: "العنوان", content: <div><a href="https://maps.app.goo.gl/yourlink" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">كلية علوم الأغذية والزراعة</a><br /><a href="https://ksu.edu.sa" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">جامعة الملك سعود</a></div>},
                {icon: <Clock/>, title: "ساعات العمل", content: <p>الأحد - الخميس: 8ص - 4م</p>}].map((item, i) => (
                 <motion.div variants={itemVariants} key={i}>
