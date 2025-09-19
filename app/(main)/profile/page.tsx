@@ -166,9 +166,27 @@ export default function ProfilePage() {
       <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8">
         {/* Updated "Join Team" alert to use theme colors */}
         {shouldShowJoinTeamButton && (
-          <div className="mb-6 bg-accent border-l-4 border-secondary text-accent-foreground p-4 rounded-md" role="alert">
+          <motion.div 
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ 
+              duration: 0.5,
+              type: "spring",
+              stiffness: 200,
+              damping: 20
+            }}
+            className="mb-6 bg-accent border-l-4 border-secondary text-accent-foreground p-4 rounded-md" 
+            role="alert"
+          >
             <div className="flex">
-              <div className="py-1"><AlertTriangle className="h-6 w-6 text-secondary mr-4"/></div>
+              <div className="py-1">
+                <motion.div
+                  animate={{ rotate: [0, -10, 10, -10, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                >
+                  <AlertTriangle className="h-6 w-6 text-secondary mr-4"/>
+                </motion.div>
+              </div>
               <div>
                 <p className="font-bold">أنت لست عضوًا في أي فريق بعد!</p>
                 <p className="text-sm">
@@ -179,12 +197,22 @@ export default function ProfilePage() {
                 </p>
               </div>
             </div>
-         </div>
+         </motion.div>
         )}
         
         {/* Mobile Profile Card */}
         {isMobile && (
-          <div className="mb-6">
+          <motion.div 
+            className="mb-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ 
+              duration: 0.5,
+              type: "spring",
+              stiffness: 200,
+              damping: 20
+            }}
+          >
             <Card className="shadow-sm bg-card text-card-foreground">
               <CardHeader className="flex flex-row items-center space-x-4 pb-4 rtl:space-x-reverse">
                 <div className="relative group">
@@ -213,16 +241,32 @@ export default function ProfilePage() {
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </motion.div>
         )}
 
-        <div className="flex w-full gap-8 items-start">
+        <motion.div 
+          className="flex w-full gap-8 items-start"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
           {/* Desktop Profile Card */}
           {!isMobile && (
              <AnimatePresence>
                 {isProfileVisible && (
-                    <motion.div layout initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 50 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 25 }} className="hidden lg:block flex-shrink-0 w-1/3">
+                    <motion.div 
+                      layout 
+                      initial={{ opacity: 0, x: 80, scale: 0.95 }} 
+                      animate={{ opacity: 1, x: 0, scale: 1 }} 
+                      exit={{ opacity: 0, x: 80, scale: 0.95 }}
+                      transition={{ 
+                        type: "spring", 
+                        stiffness: 150, 
+                        damping: 25,
+                        duration: 0.6
+                      }} 
+                      className="hidden lg:block flex-shrink-0 w-1/3"
+                    >
                         <Card className="shadow-sm w-full sticky top-24 bg-card text-card-foreground">
                             <CardHeader className="flex flex-row items-center space-x-4 pb-4 rtl:space-x-reverse">
                                 <div className="relative group">
@@ -256,44 +300,153 @@ export default function ProfilePage() {
              </AnimatePresence>
           )}
 
-          <motion.div layout transition={{ duration: 0.3, type: "spring" }} className={`flex-grow ${!isProfileVisible ? 'w-full' : 'lg:w-2/3'}`}>
+          <motion.div 
+            layout 
+            transition={{ 
+              duration: 0.5, 
+              type: "spring", 
+              stiffness: 100, 
+              damping: 20 
+            }} 
+            className={`flex-grow ${!isProfileVisible ? 'w-full' : 'lg:w-2/3'}`}
+          >
             <div className="flex items-center mb-6">
                 {!isMobile && (
-                    <motion.button onClick={() => setProfileVisible(!isProfileVisible)} className="group relative flex items-center justify-center h-10 w-10 rounded-lg bg-card border hover:bg-muted mr-2 flex-shrink-0">
-                        <motion.div initial={false} animate={{ rotate: isProfileVisible ? 0 : 180 }}>
+                    <motion.button 
+                      onClick={() => setProfileVisible(!isProfileVisible)} 
+                      className="group relative flex items-center justify-center h-10 w-10 rounded-lg bg-card border hover:bg-muted mr-2 flex-shrink-0"
+                      whileHover={{ 
+                        scale: 1.05,
+                        transition: { type: "spring", stiffness: 400, damping: 10 }
+                      }}
+                      whileTap={{ 
+                        scale: 0.95,
+                        transition: { type: "spring", stiffness: 400, damping: 10 }
+                      }}
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ 
+                        duration: 0.5,
+                        type: "spring",
+                        stiffness: 200,
+                        damping: 15
+                      }}
+                    >
+                        <motion.div 
+                          initial={false} 
+                          animate={{ rotate: isProfileVisible ? 0 : 180 }}
+                          transition={{ 
+                            duration: 0.4, 
+                            type: "spring", 
+                            stiffness: 200, 
+                            damping: 15 
+                          }}
+                        >
                             {isProfileVisible ? <ChevronsLeft className="h-5 w-5" /> : <ChevronsRight className="h-5 w-5" />}
                         </motion.div>
                     </motion.button>
                 )}
 
                 {/* Updated Tabs container to use theme colors */}
-                <div className="flex-grow border bg-muted rounded-xl p-1 overflow-x-auto">
-                    <div className="flex items-center justify-center" style={{ gap: '4px' }}>
-                        {visibleTabs.map(tab => (
+                <motion.div 
+                  className="flex-grow border bg-muted rounded-xl p-1 overflow-x-auto"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.1 }}
+                >
+                    <motion.div 
+                      className="flex items-center justify-center" 
+                      style={{ gap: '4px' }}
+                      initial="hidden"
+                      animate="visible"
+                      variants={{
+                        hidden: { opacity: 0 },
+                        visible: {
+                          opacity: 1,
+                          transition: {
+                            staggerChildren: 0.08,
+                            delayChildren: 0.1
+                          }
+                        }
+                      }}
+                    >
+                        {visibleTabs.map((tab, index) => (
                             <motion.button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
                                 className={`relative rounded-lg px-4 py-2 text-sm font-medium transition-colors ${visibleTabs.length <= 4 ? 'flex-1' : 'flex-shrink-0'} ${activeTab === tab.id ? '' : 'text-muted-foreground hover:text-foreground'}`}
+                                variants={{
+                                  hidden: { opacity: 0, y: 20, scale: 0.9 },
+                                  visible: { 
+                                    opacity: 1, 
+                                    y: 0, 
+                                    scale: 1,
+                                    transition: {
+                                      type: "spring",
+                                      stiffness: 200,
+                                      damping: 20
+                                    }
+                                  }
+                                }}
+                                whileHover={{ 
+                                  scale: 1.02,
+                                  y: -2,
+                                  transition: { 
+                                    duration: 0.2,
+                                    type: "spring",
+                                    stiffness: 300,
+                                    damping: 15
+                                  }
+                                }}
+                                whileTap={{ 
+                                  scale: 0.98,
+                                  y: 0,
+                                  transition: { 
+                                    duration: 0.1,
+                                    type: "spring",
+                                    stiffness: 400,
+                                    damping: 20
+                                  }
+                                }}
                             >
                                 {activeTab === tab.id && (
                                     // Updated active tab pill to use primary color
-                                    <motion.div layoutId="active-profile-pill" className="absolute inset-0 bg-primary rounded-lg"
-                                        transition={{ type: "spring", stiffness: 300, damping: 30 }} />
+                                    <motion.div 
+                                      layoutId="active-profile-pill" 
+                                      className="absolute inset-0 bg-primary rounded-lg"
+                                      transition={{ 
+                                        type: "spring", 
+                                        stiffness: 400, 
+                                        damping: 25,
+                                        duration: 0.5
+                                      }} 
+                                    />
                                 )}
                                 <span className={`relative z-10 whitespace-nowrap ${activeTab === tab.id ? 'text-primary-foreground' : ''}`}>{tab.label}</span>
                             </motion.button>
                         ))}
-                    </div>
-                </div>
+                    </motion.div>
+                </motion.div>
             </div>
             
             <AnimatePresence mode="wait">
-              <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+              <motion.div 
+                key={activeTab} 
+                initial={{ opacity: 0, y: 20, scale: 0.98 }} 
+                animate={{ opacity: 1, y: 0, scale: 1 }} 
+                exit={{ opacity: 0, y: -20, scale: 0.98 }} 
+                transition={{ 
+                  duration: 0.4,
+                  type: "spring",
+                  stiffness: 150,
+                  damping: 20
+                }}
+              >
                 {visibleTabs.find(tab => tab.id === activeTab)?.component}
               </motion.div>
             </AnimatePresence>
           </motion.div>
-        </div>
+        </motion.div>
       </main>
 
       <EditAvatarDialog 
