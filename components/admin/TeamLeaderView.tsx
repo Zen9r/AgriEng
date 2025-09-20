@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
 // --- استيراد الأنواع والـ Hooks ---
-import { useTeamManagement, type PendingRequest } from '@/hooks/useTeamManagement';
+import { useTeamManagement, type PendingRequest, type ArchivedRequest } from '@/hooks/useTeamManagement';
 
 // --- مكونات الواجهة ---
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -20,7 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import HoursInput from '@/components/ui/HoursInput';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Inbox, Check, X, ListChecks, PlusCircle } from 'lucide-react';
+import { Loader2, Inbox, Check, X, ListChecks, PlusCircle, Archive } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 
 // --- Schema ---
@@ -34,7 +34,7 @@ type ManualLogFormData = z.infer<typeof manualLogSchema>;
 
 // --- Manual Log Form Component ---
 interface ManualLogFormProps {
-  members: Array<{ id: string; full_name: string }>;
+  members: Array<{ id: string; full_name: string | null }>;
   userId: string;
   onSuccess?: () => void;
 }
@@ -42,7 +42,7 @@ interface ManualLogFormProps {
 export function ManualLogForm({ members, userId, onSuccess }: ManualLogFormProps) {
   const { control, handleSubmit, reset, formState: { errors } } = useForm<ManualLogFormData>({ 
     resolver: zodResolver(manualLogSchema), 
-    defaultValues: { memberId: '', description: '', hours: '' }
+    defaultValues: { memberId: '', description: '', hours: undefined }
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -73,7 +73,7 @@ export function ManualLogForm({ members, userId, onSuccess }: ManualLogFormProps
           <div className="space-y-1.5">
             <Label htmlFor="memberId">اختر عضو النادي</Label>
             <Controller name="memberId" control={control} render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value} dir="rtl"><SelectTrigger id="memberId"><SelectValue placeholder="اختر عضوًا..." /></SelectTrigger><SelectContent>{members.map(m => <SelectItem key={m.id} value={m.id}>{m.full_name}</SelectItem>)}</SelectContent></Select>
+                <Select onValueChange={field.onChange} value={field.value} dir="rtl"><SelectTrigger id="memberId"><SelectValue placeholder="اختر عضوًا..." /></SelectTrigger><SelectContent>{members.map(m => <SelectItem key={m.id} value={m.id}>{m.full_name || 'مستخدم غير معروف'}</SelectItem>)}</SelectContent></Select>
             )} />
             {errors.memberId && <p className="text-red-500 text-sm mt-1">{errors.memberId.message}</p>}
           </div>
@@ -96,7 +96,7 @@ export function ManualLogForm({ members, userId, onSuccess }: ManualLogFormProps
 
 // --- Main Component ---
 export default function TeamLeaderView({ teamId, userId }: { teamId: string; userId: string }) {
-  const { isLoading, teamMembers, pendingRequests, refreshData } = useTeamManagement(teamId);
+  const { isLoading, teamMembers, pendingRequests, archivedRequests, refreshData } = useTeamManagement(teamId);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleReview = async (requestId: string, status: 'approved' | 'rejected', hours?: number) => {
@@ -121,9 +121,12 @@ export default function TeamLeaderView({ teamId, userId }: { teamId: string; use
 
   return (
     <Tabs defaultValue="review" dir="rtl">
-      <TabsList className="grid w-full grid-cols-2">
+      <TabsList className="grid w-full grid-cols-3">
         <TabsTrigger value="review">
             <ListChecks className="ml-2 h-4 w-4"/>مراجعة الطلبات <Badge variant="secondary" className="mr-2">{pendingRequests.length}</Badge>
+        </TabsTrigger>
+        <TabsTrigger value="archived">
+            <Archive className="ml-2 h-4 w-4"/>أرشيف الطلبات <Badge variant="secondary" className="mr-2">{archivedRequests.length}</Badge>
         </TabsTrigger>
         <TabsTrigger value="manual"><PlusCircle className="ml-2 h-4 w-4"/>تسجيل ساعات يدويًا</TabsTrigger>
       </TabsList>
@@ -142,6 +145,20 @@ export default function TeamLeaderView({ teamId, userId }: { teamId: string; use
         )}
       </TabsContent>
 
+      <TabsContent value="archived" className="mt-6">
+        {archivedRequests.length > 0 ? (
+          <Accordion type="single" collapsible className="w-full space-y-4">
+            {archivedRequests.map(req => <ArchivedRequestItem key={req.id} request={req} />)}
+          </Accordion>
+        ) : (
+          <div className="text-center py-16 text-muted-foreground">
+            <Archive className="mx-auto h-16 w-16" />
+            <p className="mt-4 text-lg">لا توجد طلبات مؤرشفة.</p>
+            <p className="text-sm">لم يتم مراجعة أي طلبات من أعضاء فريقك بعد.</p>
+          </div>
+        )}
+      </TabsContent>
+
       <TabsContent value="manual" className="mt-6">
         <ManualLogForm 
           members={teamMembers} 
@@ -150,6 +167,46 @@ export default function TeamLeaderView({ teamId, userId }: { teamId: string; use
         />
       </TabsContent>
     </Tabs>
+  );
+}
+
+// --- مكون فرعي لعناصر الأرشيف ---
+interface ArchivedRequestItemProps {
+  request: ArchivedRequest;
+}
+
+function ArchivedRequestItem({ request }: ArchivedRequestItemProps) {
+  return (
+    <AccordionItem value={request.id} className="border rounded-lg bg-background">
+      <AccordionTrigger className="p-4 hover:no-underline font-semibold w-full text-right">
+        <div className="flex justify-between items-center w-full">
+          <div className="flex items-center gap-3">
+            <span>{request.activity_title}</span>
+            <Badge variant={request.status === 'approved' ? 'default' : 'destructive'}>
+              {request.status === 'approved' ? 'موافق عليه' : 'مرفوض'}
+            </Badge>
+            {request.status === 'approved' && request.awarded_hours && (
+              <Badge variant="secondary">
+                {request.awarded_hours} ساعة
+              </Badge>
+            )}
+          </div>
+          <span className="text-sm font-normal text-muted-foreground">
+            {request.profiles?.full_name || 'مستخدم غير معروف'}
+          </span>
+        </div>
+      </AccordionTrigger>
+      <AccordionContent className="px-4 pt-0 pb-4">
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground p-3 bg-muted rounded-md">
+            {request.task_description}
+          </p>
+          <div className="text-xs text-muted-foreground">
+            <p>تاريخ المراجعة: {request.created_at ? new Date(request.created_at).toLocaleDateString('ar-SA') : 'غير محدد'}</p>
+          </div>
+        </div>
+      </AccordionContent>
+    </AccordionItem>
   );
 }
 

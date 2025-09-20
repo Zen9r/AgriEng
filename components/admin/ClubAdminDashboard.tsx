@@ -15,7 +15,7 @@ import { ManualLogForm } from './TeamLeaderView';
 // --- Types ---
 interface ClubProfile {
   id: string;
-  full_name: string;
+  full_name: string | null;
 }
 
 interface ClubAdminDashboardProps {

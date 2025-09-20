@@ -164,18 +164,28 @@ export default function ProfilePage() {
     // Updated background color to use theme variable
     <div className="flex flex-col min-h-screen bg-background">
       <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8">
-        {/* Updated "Join Team" alert to use theme colors */}
+        {/* Updated "Join Team" alert to use theme colors with enhanced spring animation */}
         {shouldShowJoinTeamButton && (
           <motion.div 
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
+            initial={{ opacity: 0, y: -30, scale: 0.9, rotateX: -15 }}
+            animate={{ opacity: 1, y: 0, scale: 1, rotateX: 0 }}
             transition={{ 
-              duration: 0.5,
+              duration: 0.8,
               type: "spring",
-              stiffness: 200,
-              damping: 20
+              stiffness: 300,
+              damping: 25,
+              mass: 0.8
             }}
-            className="mb-6 bg-accent border-l-4 border-secondary text-accent-foreground p-4 rounded-md" 
+            whileHover={{ 
+              scale: 1.02,
+              y: -2,
+              transition: { 
+                type: "spring",
+                stiffness: 400,
+                damping: 20
+              }
+            }}
+            className="mb-6 bg-accent border-l-4 border-secondary text-accent-foreground p-4 rounded-md shadow-lg" 
             role="alert"
           >
             <div className="flex">
@@ -355,7 +365,7 @@ export default function ProfilePage() {
                   transition={{ duration: 0.3, delay: 0.1 }}
                 >
                     <motion.div 
-                      className="flex items-center justify-center" 
+                      className="flex items-center justify-start" 
                       style={{ gap: '4px' }}
                       initial="hidden"
                       animate="visible"

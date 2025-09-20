@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -136,83 +137,139 @@ function EventForm({ mode, initialData, onSubmit, onCancel }: {
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(processSubmit)} className="space-y-6">
-                <FormField name="title" control={form.control} render={({ field }) => (
-                    <FormItem><FormLabel>عنوان الفعالية</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                )}/>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField name="description" control={form.control} render={({ field }) => (
-                        <FormItem><FormLabel>وصف مختصر</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+            <form onSubmit={form.handleSubmit(processSubmit)} className="space-y-8">
+                {/* Basic Information Section */}
+                <div className="space-y-6">
+                    <div className="border-b pb-4">
+                        <h3 className="text-lg font-semibold text-foreground">المعلومات الأساسية</h3>
+                        <p className="text-sm text-muted-foreground">عنوان ووصف الفعالية</p>
+                    </div>
+                    <FormField name="title" control={form.control} render={({ field }) => (
+                        <FormItem><FormLabel>عنوان الفعالية</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                     )}/>
-                    <FormField name="details" control={form.control} render={({ field }) => (
-                        <FormItem><FormLabel>التفاصيل الكاملة</FormLabel><FormControl><Textarea rows={5} {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField name="description" control={form.control} render={({ field }) => (
+                            <FormItem><FormLabel>وصف مختصر</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+                        )}/>
+                        <FormField name="details" control={form.control} render={({ field }) => (
+                            <FormItem><FormLabel>التفاصيل الكاملة</FormLabel><FormControl><Textarea rows={5} {...field} /></FormControl><FormMessage /></FormItem>
+                        )}/>
+                    </div>
                 </div>
+
                 <Separator />
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                        <FormLabel>وقت البدء</FormLabel>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                            <FormField name="startDate" control={form.control} render={({ field }) => (
-                                <FormItem className="flex-1"><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className="w-full justify-start text-right font-normal">{field.value ? format(field.value, "PPP") : <span>اختر تاريخ</span>}<CalendarIcon className="ml-auto h-4 w-4" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>
-                            )}/>
-                            <div className="flex gap-2 flex-1">
-                                <FormField name="startHour" control={form.control} render={({ field }) => (
-                                    <FormItem className="w-full"><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="الساعة" /></SelectTrigger></FormControl><SelectContent>{hoursOptions.map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+
+                {/* Date and Time Section */}
+                <div className="space-y-6">
+                    <div className="border-b pb-4">
+                        <h3 className="text-lg font-semibold text-foreground">التوقيت</h3>
+                        <p className="text-sm text-muted-foreground">تاريخ ووقت بداية ونهاية الفعالية</p>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <FormLabel>وقت البدء</FormLabel>
+                            <div className="flex flex-col sm:flex-row gap-2">
+                                <FormField name="startDate" control={form.control} render={({ field }) => (
+                                    <FormItem className="flex-1"><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className="w-full justify-start text-right font-normal">{field.value ? format(field.value, "PPP") : <span>اختر تاريخ</span>}<CalendarIcon className="ml-auto h-4 w-4" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>
                                 )}/>
-                                <FormField name="startMinute" control={form.control} render={({ field }) => (
-                                    <FormItem className="w-full"><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="الدقيقة" /></SelectTrigger></FormControl><SelectContent>{minutesOptions.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                <div className="flex gap-2 flex-1">
+                                    <FormField name="startHour" control={form.control} render={({ field }) => (
+                                        <FormItem className="w-full"><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="الساعة" /></SelectTrigger></FormControl><SelectContent>{hoursOptions.map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                    )}/>
+                                    <FormField name="startMinute" control={form.control} render={({ field }) => (
+                                        <FormItem className="w-full"><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="الدقيقة" /></SelectTrigger></FormControl><SelectContent>{minutesOptions.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                    )}/>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <FormLabel>وقت الانتهاء</FormLabel>
+                            <div className="flex flex-col sm:flex-row gap-2">
+                                <FormField name="endDate" control={form.control} render={({ field }) => (
+                                    <FormItem className="flex-1"><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className="w-full justify-start text-right font-normal">{field.value ? format(field.value, "PPP") : <span>اختر تاريخ</span>}<CalendarIcon className="ml-auto h-4 w-4" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>
                                 )}/>
+                                <div className="flex gap-2 flex-1">
+                                    <FormField name="endHour" control={form.control} render={({ field }) => (
+                                        <FormItem className="w-full"><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="الساعة" /></SelectTrigger></FormControl><SelectContent>{hoursOptions.map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                    )}/>
+                                    <FormField name="endMinute" control={form.control} render={({ field }) => (
+                                        <FormItem className="w-full"><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="الدقيقة" /></SelectTrigger></FormControl><SelectContent>{minutesOptions.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                                    )}/>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div className="space-y-2">
-                        <FormLabel>وقت الانتهاء</FormLabel>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                            <FormField name="endDate" control={form.control} render={({ field }) => (
-                                <FormItem className="flex-1"><Popover><PopoverTrigger asChild><FormControl><Button variant="outline" className="w-full justify-start text-right font-normal">{field.value ? format(field.value, "PPP") : <span>اختر تاريخ</span>}<CalendarIcon className="ml-auto h-4 w-4" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={field.value} onSelect={field.onChange} /></PopoverContent></Popover><FormMessage /></FormItem>
-                            )}/>
-                            <div className="flex gap-2 flex-1">
-                                <FormField name="endHour" control={form.control} render={({ field }) => (
-                                    <FormItem className="w-full"><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="الساعة" /></SelectTrigger></FormControl><SelectContent>{hoursOptions.map(h => <SelectItem key={h} value={h}>{h}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
-                                )}/>
-                                <FormField name="endMinute" control={form.control} render={({ field }) => (
-                                    <FormItem className="w-full"><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="الدقيقة" /></SelectTrigger></FormControl><SelectContent>{minutesOptions.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
-                                )}/>
-                            </div>
-                        </div>
+                </div>
+
+                <Separator />
+
+                {/* Event Details Section */}
+                <div className="space-y-6">
+                    <div className="border-b pb-4">
+                        <h3 className="text-lg font-semibold text-foreground">تفاصيل الفعالية</h3>
+                        <p className="text-sm text-muted-foreground">الموقع والفئة وعدد الحضور</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField name="category" control={form.control} render={({ field }) => (
+                            <FormItem><FormLabel>فئة الفعالية</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="اختر فئة" /></SelectTrigger></FormControl><SelectContent>{['ورش عمل', 'معارض', 'زيارات', 'دورات تدريبية', 'اعمال تطوعية', 'مسابقات', 'مؤتمرات'].map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                        )}/>
+                        <FormField name="location" control={form.control} render={({ field }) => (
+                            <FormItem><FormLabel>الموقع</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        )}/>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField name="max_attendees" control={form.control} render={({ field }) => (
+                             <FormItem>
+                                <FormLabel>الحد الأقصى للحضور (اختياري)</FormLabel>
+                                <FormControl>
+                                    <Input type="number" placeholder="50" {...field} value={field.value ?? ''} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}/>
+                        <FormField name="organizer_whatsapp_link" control={form.control} render={({ field }) => (
+                            <FormItem><FormLabel>رابط قروب الواتساب (اختياري)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                        )}/>
                     </div>
                 </div>
+
                 <Separator />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField name="category" control={form.control} render={({ field }) => (
-                        <FormItem><FormLabel>فئة الفعالية</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="اختر فئة" /></SelectTrigger></FormControl><SelectContent>{['ورش عمل', 'معارض', 'زيارات', 'دورات تدريبية', 'اعمال تطوعية', 'مسابقات', 'مؤتمرات'].map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
-                    )}/>
-                    <FormField name="location" control={form.control} render={({ field }) => (
-                        <FormItem><FormLabel>الموقع</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
+
+                {/* Attachments & Links Section */}
+                <div className="space-y-6">
+                    <div className="border-b pb-4">
+                        <h3 className="text-lg font-semibold text-foreground">المرفقات والروابط</h3>
+                        <p className="text-sm text-muted-foreground">صورة الفعالية وروابط إضافية</p>
+                    </div>
+                    <div>
+                        <FormLabel>صورة الفعالية (اختياري)</FormLabel>
+                        <Tabs defaultValue="link"><TabsList className="grid w-full grid-cols-2"><TabsTrigger value="link"><LinkIcon className="h-4 w-4 mr-2"/>رابط</TabsTrigger><TabsTrigger value="upload"><Upload className="h-4 w-4 mr-2"/>رفع</TabsTrigger></TabsList>
+                            <TabsContent value="link" className="pt-2"><FormField name="image_url" control={form.control} render={({ field }) => (<FormItem><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/></TabsContent>
+                            <TabsContent value="upload" className="pt-2"><div className="flex items-center gap-2"><Input type="file" accept="image/*" onChange={(e) => e.target.files && handleImageUpload(e.target.files[0])} disabled={isUploading}/>{isUploading && <Loader2 className="h-5 w-5 animate-spin"/>}</div></TabsContent>
+                        </Tabs>
+                        
+                        {/* Image Preview */}
+                        {form.watch('image_url') && (
+                            <div className="mt-4">
+                                <Label className="text-sm font-medium">معاينة الصورة</Label>
+                                <div className="mt-2 border rounded-lg p-4 bg-muted/50">
+                                    <img 
+                                        src={form.watch('image_url')} 
+                                        alt="معاينة صورة الفعالية" 
+                                        className="max-w-full max-h-48 object-contain rounded-md mx-auto"
+                                        onError={(e) => {
+                                            e.currentTarget.style.display = 'none';
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField name="max_attendees" control={form.control} render={({ field }) => (
-                         <FormItem>
-                            <FormLabel>الحد الأقصى للحضور (اختياري)</FormLabel>
-                            <FormControl>
-                                <Input type="number" placeholder="50" {...field} value={field.value ?? ''} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}/>
-                    <FormField name="organizer_whatsapp_link" control={form.control} render={({ field }) => (
-                        <FormItem><FormLabel>رابط قروب الواتساب (اختياري)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                    )}/>
-                </div>
-                <div>
-                    <FormLabel>صورة الفعالية (اختياري)</FormLabel>
-                    <Tabs defaultValue="link"><TabsList className="grid w-full grid-cols-2"><TabsTrigger value="link"><LinkIcon className="h-4 w-4 mr-2"/>رابط</TabsTrigger><TabsTrigger value="upload"><Upload className="h-4 w-4 mr-2"/>رفع</TabsTrigger></TabsList>
-                        <TabsContent value="link" className="pt-2"><FormField name="image_url" control={form.control} render={({ field }) => (<FormItem><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)}/></TabsContent>
-                        <TabsContent value="upload" className="pt-2"><div className="flex items-center gap-2"><Input type="file" accept="image/*" onChange={(e) => e.target.files && handleImageUpload(e.target.files[0])} disabled={isUploading}/>{isUploading && <Loader2 className="h-5 w-5 animate-spin"/>}</div></TabsContent>
-                    </Tabs>
-                </div>
+
+                <Separator />
+
+                {/* Submit Buttons */}
                 <div className="flex gap-2 pt-4">
                     <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : mode === 'create' ? <PlusCircle className="h-4 w-4 mr-2" /> : <Edit className="h-4 w-4 mr-2" />}{mode === 'create' ? 'إنشاء الفعالية' : 'تحديث الفعالية'}</Button>
                     {mode === 'edit' && <Button type="button" variant="outline" onClick={onCancel}>إلغاء</Button>}

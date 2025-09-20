@@ -12,9 +12,14 @@ export type PendingRequest = Database['public']['Tables']['extra_hours_requests'
   profiles: Pick<Profile, 'full_name'> | null;
 };
 
+export type ArchivedRequest = Database['public']['Tables']['extra_hours_requests']['Row'] & {
+  profiles: Pick<Profile, 'full_name'> | null;
+};
+
 export function useTeamManagement(teamId: string | undefined | null) {
   const [teamMembers, setTeamMembers] = useState<Profile[]>([]);
   const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([]);
+  const [archivedRequests, setArchivedRequests] = useState<ArchivedRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
@@ -38,20 +43,34 @@ export function useTeamManagement(teamId: string | undefined | null) {
       const members = (membersResponse || []).map(m => m.profiles).filter(Boolean) as Profile[];
       setTeamMembers(members);
 
-      // الخطوة 2: جلب الطلبات المعلقة لهؤلاء الأعضاء
+      // الخطوة 2: جلب الطلبات المعلقة والمؤرشفة لهؤلاء الأعضاء
       if (members.length > 0) {
         const memberIds = members.map(m => m.id);
-        const { data: requestsData, error: requestsError } = await supabase
+        
+        // جلب الطلبات المعلقة
+        const { data: pendingData, error: pendingError } = await supabase
           .from('extra_hours_requests')
           .select('*, profiles!user_id(full_name)')
           .in('user_id', memberIds)
           .eq('status', 'pending');
 
-        if (requestsError) throw requestsError;
-        setPendingRequests(requestsData || []);
+        if (pendingError) throw pendingError;
+        setPendingRequests(pendingData || []);
+
+        // جلب الطلبات المؤرشفة (موافق عليها أو مرفوضة)
+        const { data: archivedData, error: archivedError } = await supabase
+          .from('extra_hours_requests')
+          .select('*, profiles!user_id(full_name)')
+          .in('user_id', memberIds)
+          .in('status', ['approved', 'rejected'])
+          .order('created_at', { ascending: false });
+
+        if (archivedError) throw archivedError;
+        setArchivedRequests(archivedData || []);
       } else {
         // إذا لم يكن هناك أعضاء، لا توجد طلبات
         setPendingRequests([]);
+        setArchivedRequests([]);
       }
     } catch (error) {
       toast.error("فشل تحميل بيانات الفريق.");
@@ -65,5 +84,5 @@ export function useTeamManagement(teamId: string | undefined | null) {
     fetchData();
   }, [fetchData]);
 
-  return { isLoading, teamMembers, pendingRequests, refreshData: fetchData };
+  return { isLoading, teamMembers, pendingRequests, archivedRequests, refreshData: fetchData };
 }

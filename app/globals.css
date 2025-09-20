@@ -12,8 +12,12 @@
     --popover-foreground: 222 47% 11%;
     --primary: 25 80% 50%; /* Brown from gears */
     --primary-foreground: 35 100% 98%; /* Light color for text on brown */
+    --primary-light: 25 60% 70%; /* Lighter brown */
+    --primary-dark: 25 90% 35%; /* Darker brown */
     --secondary: 170 45% 45%; /* Teal from leaves */
     --secondary-foreground: 210 40% 98%; /* Light color for text on teal */
+    --secondary-light: 170 35% 65%; /* Lighter teal */
+    --secondary-dark: 170 55% 30%; /* Darker teal */
     --muted: 210 40% 96.1%;
     --muted-foreground: 215 20% 65%;
     --accent: 170 40% 94%;
@@ -73,6 +77,34 @@
 }
 
 @keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* ======================================= */
+/* ==  Hero Section Animated Gradient    == */
+/* ======================================= */
+
+.hero-animated-gradient {
+  background: linear-gradient(
+    -45deg,
+    hsl(var(--primary-light)),
+    hsl(var(--secondary-light)),
+    hsl(var(--primary)),
+    hsl(var(--secondary))
+  );
+  background-size: 400% 400%;
+  animation: heroGradient 8s ease infinite;
+}
+
+@keyframes heroGradient {
   0% {
     background-position: 0% 50%;
   }

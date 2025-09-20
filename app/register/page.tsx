@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Progress } from "@/components/ui/progress"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 
@@ -118,6 +119,13 @@ export default function RegisterPage() {
           <CardDescription className="text-center">
             {step === 1 ? "الخطوة 1 من 3: المعلومات الأساسية" : step === 2 ? "الخطوة 2 من 3: عرفنا عنك" : "الخطوة 3 من 3: مهاراتك ونوع العضوية"}
           </CardDescription>
+          <div className="mt-4 space-y-2">
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>التقدم</span>
+              <span>{Math.round((step / 3) * 100)}%</span>
+            </div>
+            <Progress value={(step / 3) * 100} className="h-2" />
+          </div>
         </CardHeader>
         <CardContent>
           {error && <p className="mb-4 text-center text-red-500 bg-red-100 p-3 rounded-md">{error}</p>}

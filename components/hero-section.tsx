@@ -8,8 +8,8 @@ import { Button } from './ui/button'
 
 export default function HeroSection() {
   return (
-    // تم تغيير الخلفية لتستخدم ألوان الثيم الجديد
-    <section className="relative bg-gradient-to-br from-primary to-secondary text-white py-20 lg:py-32">
+    // تم تغيير الخلفية لتستخدم ألوان الثيم الجديد مع الحركة المتحركة
+    <section className="relative hero-animated-gradient text-white py-20 lg:py-32">
       <div className="absolute inset-0 bg-black opacity-10"></div>
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
