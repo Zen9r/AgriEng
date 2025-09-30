@@ -43,6 +43,8 @@ const PinInput = ({ onComplete }: { onComplete: (pin: string) => void }) => {
 
   useEffect(() => {
     inputRefs.current = inputRefs.current.slice(0, 6);
+    // Focus on first input when component mounts
+    inputRefs.current[0]?.focus();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
@@ -83,31 +85,66 @@ const PinInput = ({ onComplete }: { onComplete: (pin: string) => void }) => {
   };
 
   return (
-    <div dir="ltr" className="flex justify-center gap-2 md:gap-3">
-      {pin.map((digit, index) => (
-        <Input
-          key={index}
-          ref={(el) => { inputRefs.current[index] = el; }}
-          type="tel"
-          maxLength={1}
-          value={digit}
-          onChange={(e) => handleChange(e, index)}
-          onKeyDown={(e) => handleKeyDown(e, index)}
-          onPaste={index === 0 ? handlePaste : undefined}
-          className="w-12 h-14 text-center text-2xl font-bold rounded-md aspect-square"
-          aria-label={`Digit ${index + 1}`}
-        />
-      ))}
+    <div className="space-y-4">
+      {/* Visual indicator showing the order */}
+      <div className="flex justify-center gap-1 text-xs text-muted-foreground">
+        {Array.from({ length: 6 }, (_, i) => (
+          <span key={i} className="w-8 h-8 flex items-center justify-center rounded-full border border-muted-foreground/30">
+            {i + 1}
+          </span>
+        ))}
+      </div>
+      
+      {/* PIN input fields */}
+      <div dir="ltr" className="flex justify-center gap-2 md:gap-3">
+        {pin.map((digit, index) => (
+          <div key={index} className="relative">
+            <Input
+              ref={(el) => { inputRefs.current[index] = el; }}
+              type="tel"
+              maxLength={1}
+              value={digit}
+              onChange={(e) => handleChange(e, index)}
+              onKeyDown={(e) => handleKeyDown(e, index)}
+              onPaste={index === 0 ? handlePaste : undefined}
+              className="w-12 h-14 text-center text-2xl font-bold rounded-md aspect-square border-2 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+              aria-label={`الرقم ${index + 1} من 6`}
+              placeholder=""
+            />
+            {/* First digit indicator */}
+            {index === 0 && (
+              <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs text-primary font-semibold bg-primary/10 px-2 py-1 rounded-full">
+                ابدأ هنا
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      
+      {/* Progress indicator */}
+      <div className="flex justify-center gap-1">
+        {pin.map((digit, index) => (
+          <div
+            key={index}
+            className={`w-2 h-2 rounded-full transition-colors ${
+              digit ? 'bg-primary' : 'bg-muted-foreground/30'
+            }`}
+          />
+        ))}
+      </div>
     </div>
   );
 };
 
 const CheckInForm = ({ onConfirm }: { onConfirm: (code: string) => void }) => {
   return (
-    <div className="space-y-4">
-      <div className="space-y-2 text-center">
-        <Label className="text-foreground font-semibold">كود التحقق من الحضور</Label>
-        <p className="text-sm text-muted-foreground">أدخل الكود المكون من 6 أرقام الذي تم تزويدك به.</p>
+    <div className="space-y-6">
+      <div className="space-y-3 text-center">
+        <Label className="text-foreground font-semibold text-lg">كود التحقق من الحضور</Label>
+        <p className="text-sm text-muted-foreground">أدخل الكود المكون من 6 أرقام الذي تم تزويدك به</p>
+        <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md">
+          💡 ابدأ من اليسار (الرقم الأول) واتبع الترتيب كما هو مكتوب
+        </p>
       </div>
       <PinInput onComplete={onConfirm} />
     </div>
