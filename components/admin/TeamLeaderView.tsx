@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import toast from 'react-hot-toast';
 import { useForm, Controller } from 'react-hook-form';
@@ -20,7 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import HoursInput from '@/components/ui/HoursInput';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Inbox, Check, X, ListChecks, PlusCircle, Archive } from 'lucide-react';
+import { Loader2, Inbox, Check, X, ListChecks, PlusCircle, Archive, Search, User } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 
 // --- Schema ---
@@ -45,6 +45,28 @@ export function ManualLogForm({ members, userId, onSuccess }: ManualLogFormProps
     defaultValues: { memberId: '', description: '', hours: undefined }
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // تصفية الأعضاء حسب البحث
+  const filteredMembers = members.filter(member => 
+    member.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) || false
+  );
+
+  // إغلاق القائمة عند النقر خارجها
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const onManualLogSubmit = async (data: ManualLogFormData) => {
     setIsSubmitting(true);
@@ -67,27 +89,142 @@ export function ManualLogForm({ members, userId, onSuccess }: ManualLogFormProps
 
   return (
     <Card>
-      <CardHeader><CardTitle>تسجيل ساعات لمهمة</CardTitle><CardDescription>منح ساعات مباشرة لعضو في النادي لمهمة مكتملة.</CardDescription></CardHeader>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <User className="h-5 w-5" />
+          تسجيل ساعات لمهمة
+        </CardTitle>
+        <CardDescription>منح ساعات مباشرة لعضو في النادي لمهمة مكتملة</CardDescription>
+      </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onManualLogSubmit)} className="space-y-6">
-          <div className="space-y-1.5">
-            <Label htmlFor="memberId">اختر عضو النادي</Label>
+          <div className="space-y-3">
+            <Label htmlFor="memberId" className="text-base font-semibold">اختر عضو النادي</Label>
+            
+            {/* البحث عن الأعضاء */}
+            <div className="relative" ref={searchRef}>
+              <div className="relative">
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="ابحث عن اسم العضو..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setIsSearchOpen(true);
+                  }}
+                  onFocus={() => setIsSearchOpen(true)}
+                  className="pr-10"
+                />
+              </div>
+              
+              {/* قائمة النتائج */}
+              {isSearchOpen && (
+                <div className="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                  {filteredMembers.length > 0 ? (
+                    filteredMembers.map(member => (
+                      <button
+                        key={member.id}
+                        type="button"
+                        onClick={() => {
+                          control._formValues.memberId = member.id;
+                          setSearchTerm(member.full_name || 'مستخدم غير معروف');
+                          setIsSearchOpen(false);
+                        }}
+                        className="w-full text-right px-4 py-3 hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0 flex items-center gap-3"
+                      >
+                        <User className="h-4 w-4 text-gray-400" />
+                        <span className="font-medium">{member.full_name || 'مستخدم غير معروف'}</span>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-3 text-gray-500 dark:text-gray-400 text-center">
+                      لا توجد نتائج
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* العضو المختار */}
             <Controller name="memberId" control={control} render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value} dir="rtl"><SelectTrigger id="memberId"><SelectValue placeholder="اختر عضوًا..." /></SelectTrigger><SelectContent>{members.map(m => <SelectItem key={m.id} value={m.id}>{m.full_name || 'مستخدم غير معروف'}</SelectItem>)}</SelectContent></Select>
+              <div className="hidden">
+                <Input {...field} />
+              </div>
             )} />
+            
+            {control._formValues.memberId && (
+              <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <div className="flex items-center gap-2 text-green-800 dark:text-green-200">
+                  <User className="h-4 w-4" />
+                  <span className="font-medium">
+                    {members.find(m => m.id === control._formValues.memberId)?.full_name || 'مستخدم غير معروف'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      control._formValues.memberId = '';
+                      setSearchTerm('');
+                    }}
+                    className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+            
             {errors.memberId && <p className="text-red-500 text-sm mt-1">{errors.memberId.message}</p>}
           </div>
-          <div className="space-y-1.5">
-             <Label htmlFor="description">وصف المهمة</Label>
-             <Controller name="description" control={control} render={({ field }) => <Textarea id="description" placeholder="مثال: تصوير وتعديل فيديو تغطية الحدث." {...field} />} />
-             {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>}
+          <div className="space-y-3">
+            <Label htmlFor="description" className="text-base font-semibold">وصف المهمة</Label>
+            <Controller 
+              name="description" 
+              control={control} 
+              render={({ field }) => (
+                <Textarea 
+                  id="description" 
+                  placeholder="مثال: تصوير وتعديل فيديو تغطية الحدث." 
+                  className="min-h-[100px] border-2 focus:border-blue-500 transition-all duration-200"
+                  {...field} 
+                />
+              )} 
+            />
+            {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>}
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="hours">عدد الساعات</Label>
-            <Controller name="hours" control={control} render={({ field }) => <HoursInput value={field.value} onChange={field.onChange} placeholder="اختر عدد الساعات" />} />
+          
+          <div className="space-y-3">
+            <Label htmlFor="hours" className="text-base font-semibold">عدد الساعات</Label>
+            <Controller 
+              name="hours" 
+              control={control} 
+              render={({ field }) => (
+                <HoursInput 
+                  value={field.value} 
+                  onChange={field.onChange} 
+                  placeholder="اختر عدد الساعات" 
+                />
+              )} 
+            />
             {errors.hours && <p className="text-red-500 text-sm mt-1">{errors.hours.message}</p>}
           </div>
-          <Button type="submit" disabled={isSubmitting} className="w-full">{isSubmitting ? <Loader2 className="h-4 w-4 animate-spin"/> : 'منح الساعات'}</Button>
+          
+          <Button 
+            type="submit" 
+            disabled={isSubmitting} 
+            className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin ml-2"/>
+                جاري التسجيل...
+              </>
+            ) : (
+              <>
+                <Check className="h-5 w-5 ml-2"/>
+                منح الساعات
+              </>
+            )}
+          </Button>
         </form>
       </CardContent>
     </Card>
