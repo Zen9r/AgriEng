@@ -133,41 +133,240 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* زر قائمة الجوال */}
+          {/* زر قائمة الجوال المحسّن */}
           <div className="absolute inset-y-0 left-0 flex items-center pl-4 md:hidden">
-            <button onClick={() => setIsOpen(!isOpen)} className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-black focus:outline-none">
+            <motion.button 
+              onClick={() => setIsOpen(!isOpen)} 
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-black focus:outline-none hover:bg-gray-100 transition-colors"
+              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.05 }}
+            >
               <span className="sr-only">Open main menu</span>
-              {isOpen ? <X className="block h-6 w-6" /> : <Menu className="block h-6 w-6" />}
-            </button>
+              <AnimatePresence mode="wait">
+                {isOpen ? (
+                  <motion.div
+                    key="close"
+                    initial={{ rotate: -90, opacity: 0 }}
+                    animate={{ rotate: 0, opacity: 1 }}
+                    exit={{ rotate: 90, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <X className="block h-6 w-6" />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="menu"
+                    initial={{ rotate: 90, opacity: 0 }}
+                    animate={{ rotate: 0, opacity: 1 }}
+                    exit={{ rotate: -90, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Menu className="block h-6 w-6" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.button>
           </div>
         </div>
       </div>
 
-      {/* قائمة الجوال المنسدلة */}
+      {/* قائمة الجوال المنسدلة المحسّنة */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="md:hidden absolute w-full bg-white shadow-lg border-t">
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }} 
+            animate={{ 
+              opacity: 1, 
+              height: 'auto',
+              transition: {
+                height: { duration: 0.35, ease: [0.4, 0, 0.2, 1] },
+                opacity: { duration: 0.25, delay: 0.1 }
+              }
+            }} 
+            exit={{ 
+              opacity: 0, 
+              height: 0,
+              transition: {
+                height: { duration: 0.3, ease: [0.4, 0, 1, 1], delay: 0.15 },
+                opacity: { duration: 0.2 }
+              }
+            }} 
+            className="md:hidden absolute w-full bg-white shadow-lg border-t overflow-hidden"
+          >
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-              {navLinks.map((link) => (
-                <Link key={link.href} href={link.href} className="text-gray-700 hover:bg-gray-100 block px-3 py-2 rounded-md text-base font-medium" onClick={() => setIsOpen(false)}>
-                  {link.label}
-                </Link>
+              {navLinks.map((link, index) => (
+                <motion.div
+                  key={link.href}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ 
+                    opacity: 1, 
+                    x: 0,
+                    transition: {
+                      delay: 0.1 + (index * 0.05),
+                      duration: 0.3,
+                      ease: "easeOut"
+                    }
+                  }}
+                  exit={{ 
+                    opacity: 0, 
+                    x: -20,
+                    transition: {
+                      delay: (navLinks.length - index - 1) * 0.03,
+                      duration: 0.2
+                    }
+                  }}
+                >
+                  <Link 
+                    href={link.href} 
+                    className="text-gray-700 hover:bg-gray-100 block px-3 py-2 rounded-md text-base font-medium transition-colors" 
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                </motion.div>
               ))}
-              <div className="pt-4 pb-3 border-t border-gray-200">
+              
+              <motion.div 
+                className="pt-4 pb-3 border-t border-gray-200"
+                initial={{ opacity: 0, scaleY: 0, originY: 0 }}
+                animate={{ 
+                  opacity: 1,
+                  scaleY: 1,
+                  transition: { 
+                    delay: 0.35, 
+                    duration: 0.3,
+                    ease: "easeOut"
+                  }
+                }}
+                exit={{ 
+                  opacity: 0,
+                  scaleY: 0,
+                  transition: { 
+                    duration: 0.2,
+                    ease: "easeIn"
+                  }
+                }}
+              >
                 <div className="flex flex-col space-y-3 px-3">
                   {user ? (
                     <>
-                      <Link href="/profile" onClick={() => setIsOpen(false)}><Button className="w-full justify-center bg-primary hover:bg-primary/90 text-primary-foreground"><User className="w-4 h-4 ml-2" />ملفي الشخصي</Button></Link>
-                      <Button variant="outline" className="w-full justify-center" onClick={handleLogout}><LogOut className="w-4 h-4 ml-2" />تسجيل الخروج</Button>
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ 
+                          opacity: 1, 
+                          y: 0,
+                          scale: 1,
+                          transition: { 
+                            delay: 0.45, 
+                            duration: 0.3,
+                            type: "spring",
+                            stiffness: 200
+                          }
+                        }}
+                        exit={{ 
+                          opacity: 0, 
+                          y: -5,
+                          scale: 0.95,
+                          transition: { duration: 0.15 }
+                        }}
+                      >
+                        <Link href="/profile" onClick={() => setIsOpen(false)}>
+                          <Button className="w-full justify-center bg-primary hover:bg-primary/90 text-primary-foreground">
+                            <User className="w-4 h-4 ml-2" />
+                            ملفي الشخصي
+                          </Button>
+                        </Link>
+                      </motion.div>
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ 
+                          opacity: 1, 
+                          y: 0,
+                          scale: 1,
+                          transition: { 
+                            delay: 0.55, 
+                            duration: 0.3,
+                            type: "spring",
+                            stiffness: 200
+                          }
+                        }}
+                        exit={{ 
+                          opacity: 0, 
+                          y: -5,
+                          scale: 0.95,
+                          transition: { duration: 0.15, delay: 0.05 }
+                        }}
+                      >
+                        <Button 
+                          variant="outline" 
+                          className="w-full justify-center" 
+                          onClick={handleLogout}
+                        >
+                          <LogOut className="w-4 h-4 ml-2" />
+                          تسجيل الخروج
+                        </Button>
+                      </motion.div>
                     </>
                   ) : (
                     <>
-                      <Link href="/login" onClick={() => setIsOpen(false)}><Button variant="outline" className="w-full justify-center"><User className="w-4 h-4 ml-2" />تسجيل الدخول</Button></Link>
-                      <Link href="/register" onClick={() => setIsOpen(false)}><Button className="w-full justify-center bg-primary hover:bg-primary/90 text-primary-foreground"><UserPlus className="w-4 h-4 ml-2" />التسجيل في النادي</Button></Link>
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ 
+                          opacity: 1, 
+                          y: 0,
+                          scale: 1,
+                          transition: { 
+                            delay: 0.45, 
+                            duration: 0.3,
+                            type: "spring",
+                            stiffness: 200
+                          }
+                        }}
+                        exit={{ 
+                          opacity: 0, 
+                          y: -5,
+                          scale: 0.95,
+                          transition: { duration: 0.15 }
+                        }}
+                      >
+                        <Link href="/login" onClick={() => setIsOpen(false)}>
+                          <Button variant="outline" className="w-full justify-center">
+                            <User className="w-4 h-4 ml-2" />
+                            تسجيل الدخول
+                          </Button>
+                        </Link>
+                      </motion.div>
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ 
+                          opacity: 1, 
+                          y: 0,
+                          scale: 1,
+                          transition: { 
+                            delay: 0.55, 
+                            duration: 0.3,
+                            type: "spring",
+                            stiffness: 200
+                          }
+                        }}
+                        exit={{ 
+                          opacity: 0, 
+                          y: -5,
+                          scale: 0.95,
+                          transition: { duration: 0.15, delay: 0.05 }
+                        }}
+                      >
+                        <Link href="/register" onClick={() => setIsOpen(false)}>
+                          <Button className="w-full justify-center bg-primary hover:bg-primary/90 text-primary-foreground">
+                            <UserPlus className="w-4 h-4 ml-2" />
+                            التسجيل في النادي
+                          </Button>
+                        </Link>
+                      </motion.div>
                     </>
                   )}
                 </div>
-              </div>
+              </motion.div>
             </div>
           </motion.div>
         )}

@@ -34,9 +34,17 @@ export const useFileUpload = () => {
       }
       
       // -- التعديل هنا --
-      // استخدم المسار المخصص إذا تم توفيره، وإلا قم بإنشاء اسم ملف عشوائي.
+      // استخدم المسار المخصص إذا تم توفيره، وإلا قم بإنشاء اسم ملف آمن.
       // هذا يجعل الهوك مرناً وقابلاً لإعادة الاستخدام في أماكن أخرى.
-      const filePath = customPath || `${Date.now()}_${fileToUpload.name}`;
+      const sanitizeFileName = (name: string) => {
+        // إزالة الأحرف غير الصالحة واستبدالها بشرطات
+        return name
+          .replace(/[^a-zA-Z0-9.-]/g, '_')
+          .replace(/_{2,}/g, '_')
+          .replace(/^_|_$/g, '');
+      };
+      
+      const filePath = customPath || `${Date.now()}_${sanitizeFileName(fileToUpload.name)}`;
 
       // الخطوة 2: رفع الملف إلى Supabase Storage
       const { error: uploadError } = await supabase.storage

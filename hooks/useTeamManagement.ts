@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { proxyClient } from '@/lib/supabaseClient';
 import toast from 'react-hot-toast';
 import type { Database } from '@/types/supabase';
 
@@ -32,7 +32,7 @@ export function useTeamManagement(teamId: string | undefined | null) {
     setIsLoading(true);
     try {
       // الخطوة 1: جلب user_id لكل الأعضاء في الفريق
-      const { data: membersResponse, error: membersError } = await supabase
+      const { data: membersResponse, error: membersError } = await proxyClient
         .from('team_members')
         .select('user_id, profiles!inner(*)')
         .eq('team_id', teamId);
@@ -48,7 +48,7 @@ export function useTeamManagement(teamId: string | undefined | null) {
         const memberIds = members.map(m => m.id);
         
         // جلب الطلبات المعلقة
-        const { data: pendingData, error: pendingError } = await supabase
+        const { data: pendingData, error: pendingError } = await proxyClient
           .from('extra_hours_requests')
           .select('*, profiles!user_id(full_name)')
           .in('user_id', memberIds)
@@ -58,7 +58,7 @@ export function useTeamManagement(teamId: string | undefined | null) {
         setPendingRequests(pendingData || []);
 
         // جلب الطلبات المؤرشفة (موافق عليها أو مرفوضة)
-        const { data: archivedData, error: archivedError } = await supabase
+        const { data: archivedData, error: archivedError } = await proxyClient
           .from('extra_hours_requests')
           .select('*, profiles!user_id(full_name)')
           .in('user_id', memberIds)
@@ -72,7 +72,7 @@ export function useTeamManagement(teamId: string | undefined | null) {
         setPendingRequests([]);
         setArchivedRequests([]);
       }
-    } catch (error) {
+    } catch (error: any) {
       toast.error("فشل تحميل بيانات الفريق.");
       console.error("Team Management Hook Error:", error);
     } finally {

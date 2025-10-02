@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, proxyClient } from '@/lib/supabaseClient';
 // --- تعديل: استيراد Controller ---
 import { useForm, SubmitHandler, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
@@ -69,7 +69,7 @@ export default function SubmitHoursTab() {
         status: 'pending',
       };
       
-      const { error } = await supabase.from('extra_hours_requests').insert(requestData);
+      const { error } = await proxyClient.from('extra_hours_requests').insert(requestData);
       if (error) throw error;
 
       toast.success('تم إرسال طلبك بنجاح للمراجعة.');

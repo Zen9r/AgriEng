@@ -1,6 +1,6 @@
 // src/hooks/useUserRegistrations.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabaseClient';
+import { proxyClient } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -33,19 +33,24 @@ import type { Event as FullEvent } from './useEvents';
 // ١. HOOK لقراءة بيانات التسجيل (Query)
 // =================================================================
 const fetchUserRegistrations = async (userId: string): Promise<Registration[]> => {
-    const { data, error } = await supabase
-        .from('event_registrations')
-        .select(`
-          id, role, status, hours,
-          events (id, title, start_time, location)
-        `)
-        .eq('user_id', userId)
-        .order('start_time', { foreignTable: 'events', ascending: false });
+    try {
+        const { data, error } = await proxyClient
+            .from('event_registrations')
+            .select(`
+              id, role, status, hours,
+              events (id, title, start_time, location)
+            `)
+            .eq('user_id', userId)
+            .order('start_time', { foreignTable: 'events', ascending: false });
 
-    if (error) {
-        throw new Error(error.message);
+        if (error) {
+            throw new Error(error.message);
+        }
+        return (data as unknown as Registration[]) || [];
+    } catch (error: any) {
+        console.error('Error fetching user registrations:', error);
+        throw new Error(error.message || 'Failed to fetch user registrations');
     }
-    return (data as unknown as Registration[]) || [];
 };
 
 /**
@@ -75,26 +80,32 @@ interface RegistrationParams {
 }
 
 const registerForEvent = async ({ eventId, userId, event }: RegistrationParams) => {
-  const { data: existingRegistration } = await supabase
-    .from('event_registrations')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('event_id', eventId)
-    .maybeSingle();
+  try {
+    const { data: existingRegistrations } = await proxyClient
+      .from('event_registrations')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('event_id', eventId);
+    
+    const existingRegistration = existingRegistrations && existingRegistrations.length > 0 ? existingRegistrations[0] : null;
 
-  if (existingRegistration) throw new Error('أنت مسجل بالفعل في هذه الفعالية.');
+    if (existingRegistration) throw new Error('أنت مسجل بالفعل في هذه الفعالية.');
 
-  if (event.max_attendees && event.registered_attendees >= event.max_attendees) {
-    throw new Error('عذراً، المقاعد لهذه الفعالية ممتلئة.');
+    if (event.max_attendees && event.registered_attendees >= event.max_attendees) {
+      throw new Error('عذراً، المقاعد لهذه الفعالية ممتلئة.');
+    }
+
+    const { error: insertError } = await proxyClient
+      .from('event_registrations')
+      .insert([{ user_id: userId, event_id: eventId, status: 'registered' }]);
+
+    if (insertError) throw new Error(insertError.message);
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error registering for event:', error);
+    throw new Error(error.message || 'Failed to register for event');
   }
-
-  const { error: insertError } = await supabase
-    .from('event_registrations')
-    .insert([{ user_id: userId, event_id: eventId, status: 'registered' }]);
-
-  if (insertError) throw new Error(insertError.message);
-
-  return { success: true };
 };
 
 /**

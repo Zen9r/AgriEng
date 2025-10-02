@@ -81,11 +81,27 @@ export default function EventsPage() {
     register({ eventId: event.id, userId: user.id, event });
   };
 
-  // 🌟 FIX: The filtering logic now correctly uses the category from the event data.
+  // 🌟 Category filtering with all event types
   const categories = ["all", "ورش عمل", "دورات تدريبية", "زيارات", "اعمال تطوعية", "معارض", "مسابقات", "حفلات", "مؤتمرات"];
-  const filteredEvents = filter === "all" ? events : events.filter(event => event.category === filter);
   
-  // This map helps in generating English text for placeholder images if needed.
+  // فلتر الفئات
+  const filteredByCategory = filter === "all" ? events : events.filter(event => event.category === filter);
+  
+  // 🕐 فلتر الفعاليات: إخفاء أي فعالية انتهت ومر عليها أكثر من ساعة
+  const now = new Date();
+  const filteredEvents = filteredByCategory.filter(event => {
+    // إذا لم يكن هناك وقت انتهاء، أظهر الفعالية
+    if (!event.end_time) return true;
+    
+    const endTime = new Date(event.end_time);
+    // إضافة ساعة واحدة لوقت الانتهاء
+    const oneHourAfterEnd = new Date(endTime.getTime() + 60 * 60 * 1000);
+    
+    // إذا الوقت الحالي أكبر من (وقت الانتهاء + ساعة)، لا تظهر الفعالية
+    return now < oneHourAfterEnd;
+  });
+  
+  // This map helps in generating English text for placeholder images if needed
   const categoryMap: { [key: string]: string } = { "ورش عمل": "Workshop", "معارض": "Exhibition", "زيارات": "Visit", "دورات تدريبية": "Course", "اعمال تطوعية": "Volunteering", "مسابقات": "Competition", "حفلات": "Ceremony", "مؤتمرات": "Conference" };
 
   return (
@@ -124,7 +140,6 @@ export default function EventsPage() {
                 <motion.div key={event.id} variants={itemVariants}>
                   <Card className="overflow-hidden h-full flex flex-col bg-card text-card-foreground rounded-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
                     <div className="relative">
-                        {/* 🌟 FIX: The placeholder image now uses the event's category correctly. */}
                         <img 
                             src={event.image_url || `https://placehold.co/600x400/e2d8d4/8c5a2b?text=${encodeURIComponent(event.category || 'فعالية')}`} 
                             alt={event.title ?? 'صورة فعالية'} 
@@ -148,7 +163,6 @@ export default function EventsPage() {
                         <Button className="flex-1" onClick={() => handleAttendEvent(event)} disabled={isRegistering}>
                          {isRegistering ? 'جارٍ التسجيل...' : 'تسجيل في الفعالية'}
                         </Button>
-                        {/* 🌟 FIX: Corrected the link to point to the details page. */}
                         <Link href={`/${event.id}`} className="flex-1">
                             <Button variant="outline" className="w-full">
                              التفاصيل

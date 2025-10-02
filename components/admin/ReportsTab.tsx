@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { proxyClient, supabase } from '@/lib/supabaseClient';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { useForm, SubmitHandler } from 'react-hook-form';
@@ -22,7 +22,7 @@ import { Download, AlertTriangle, CheckCircle, Loader2, Archive, ListChecks, Fil
 
 // --- Types ---
 type EventWithTimes = { id: number; title: string; start_time: string | null; end_time: string | null; hasReport?: boolean; };
-type ParticipantProfile = { full_name: string; student_id: string; email: string; phone_number: string; };
+type ParticipantProfile = { full_name: string; student_id: string; phone_number: string; };
 type Participant = { role: 'attendee' | 'organizer'; status: 'attended' | 'absent' | 'registered'; profiles: ParticipantProfile; };
 type ReportNotesForm = { notes: string; };
 type ReportDetails = { notes: string | null; created_at: string; uploaded_by: string; uploader_name?: string; };
@@ -98,16 +98,15 @@ function QuickStats({ events, participants }: { events: EventWithTimes[]; partic
 }
 const exportToCSV = (participants: Participant[], event: EventWithTimes) => {
   if (!participants || participants.length === 0) { toast.error('لا يوجد مشاركين لتصديرهم.'); return; }
-  const headers = ['الاسم الكامل', 'الرقم الجامعي', 'البريد الإلكتروني', 'رقم الهاتف', 'الدور', 'الحالة'];
+  const headers = ['الاسم الكامل', 'الرقم الجامعي', 'رقم الهاتف', 'الدور', 'الحالة'];
   const rows = participants.map(p => {
     const profile = p.profiles;
     const name = `"${profile?.full_name?.replace(/"/g, '""') || '-'}"`;
     const studentId = `"${profile?.student_id || '-'}"`;
-    const email = `"${profile?.email || '-'}"`;
     const phone = `"${profile?.phone_number || '-'}"`;
     const role = p.role === 'organizer' ? '"منظم"' : '"حضور"';
     const status = p.status === 'attended' ? '"حاضر"' : p.status === 'absent' ? '"غائب"' : '"مسجل"';
-    return [name, studentId, email, phone, role, status].join(',');
+    return [name, studentId, phone, role, status].join(',');
   });
   const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows].join('\n');
   const link = document.createElement("a");
@@ -131,21 +130,45 @@ function EventDetailsView({ event, onReportSubmitted }: { event: EventWithTimes;
   useEffect(() => {
     const fetchDetails = async () => {
       setIsLoading(true);
-      const { data, error } = await supabase.rpc('get_event_participants', { event_id_input: event.id });
-      if (error) { toast.error("فشل جلب قائمة الحضور."); console.error("RPC Error:", error); } 
-      else { setParticipants(data as Participant[]); }
       
-      // Check if there's a report for this event
-      const { data: reportData, error: reportError } = await supabase.from('event_reports').select('notes, created_at, uploaded_by').eq('event_id', event.id).single();
-      if (!reportError && reportData) {
-          // **تصحيح**: جلب اسم الموثِّق في طلب منفصل لتجنب المشاكل
-          const { data: uploaderProfile, error: profileError } = await supabase.from('profiles').select('full_name').eq('id', reportData.uploaded_by).single();
-          if(!profileError) {
-              setReportDetails({ ...reportData, uploader_name: uploaderProfile.full_name || undefined });
-          } else {
-              setReportDetails(reportData); // Show details even if uploader name fails
-          }
+      // جلب المشاركين والتقرير في نفس الوقت
+      const [participantsResult, reportResult] = await Promise.all([
+        proxyClient
+          .from('event_registrations')
+          .select(`
+            role,
+            status,
+            profiles!inner(full_name, student_id, phone_number)
+          `)
+          .eq('event_id', event.id),
+        proxyClient
+          .from('event_reports')
+          .select('notes, created_at, uploaded_by')
+          .eq('event_id', event.id)
+          .single()
+      ]);
+      
+      if (participantsResult.error) { 
+        toast.error("فشل جلب قائمة الحضور."); 
+        console.error("Participants Error:", participantsResult.error); 
+      } else { 
+        setParticipants(participantsResult.data as Participant[]); 
       }
+      
+      if (!reportResult.error && reportResult.data) {
+        // جلب اسم الموثِّق
+        const { data: uploaderProfile } = await proxyClient
+          .from('profiles')
+          .select('full_name')
+          .eq('id', reportResult.data.uploaded_by)
+          .single();
+        
+        setReportDetails({ 
+          ...reportResult.data, 
+          uploader_name: uploaderProfile?.full_name || undefined 
+        });
+      }
+      
       setIsLoading(false);
     };
     fetchDetails();
@@ -155,7 +178,7 @@ function EventDetailsView({ event, onReportSubmitted }: { event: EventWithTimes;
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not found');
-      const { data: report, error: reportError } = await supabase.from('event_reports').insert({ event_id: event.id, notes: formData.notes, uploaded_by: user.id }).select('id').single();
+      const { data: report, error: reportError } = await proxyClient.from('event_reports').insert({ event_id: event.id, notes: formData.notes, uploaded_by: user.id }).select('id').single();
       if (reportError) throw reportError;
       // Note: We'll store the report_id in the event_reports table, not in events table
       // The relationship is maintained through event_id in event_reports
@@ -223,7 +246,6 @@ function EventDetailsView({ event, onReportSubmitted }: { event: EventWithTimes;
                   <TableRow className="bg-gray-50 dark:bg-gray-700">
                     <TableHead className="font-semibold">الاسم الكامل</TableHead>
                     <TableHead className="font-semibold">الرقم الجامعي</TableHead>
-                    <TableHead className="font-semibold">البريد الإلكتروني</TableHead>
                     <TableHead className="font-semibold">رقم الهاتف</TableHead>
                     <TableHead className="font-semibold">الدور</TableHead>
                     <TableHead className="font-semibold">الحالة</TableHead>
@@ -234,7 +256,6 @@ function EventDetailsView({ event, onReportSubmitted }: { event: EventWithTimes;
                     <TableRow key={i} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                       <TableCell className="font-medium">{p.profiles?.full_name || '-'}</TableCell>
                       <TableCell>{p.profiles?.student_id || '-'}</TableCell>
-                      <TableCell className="text-sm">{p.profiles?.email || '-'}</TableCell>
                       <TableCell>{p.profiles?.phone_number || '-'}</TableCell>
                       <TableCell>
                         <Badge variant={p.role === 'organizer' ? 'default' : 'secondary'}>
@@ -344,13 +365,13 @@ export default function ReportsTab() {
     setIsLoading(true);
     setError(null);
     try {
-      const { data, error: fetchError } = await supabase.from('events').select('id, title, start_time, end_time').order('end_time', { ascending: false });
+      const { data, error: fetchError } = await proxyClient.from('events').select('id, title, start_time, end_time').order('end_time', { ascending: false });
       if (fetchError) throw fetchError;
       
-      // Check which events have reports
+      // جلب التقارير بطريقة محسنة
       const eventsWithReports = await Promise.all(
-        (data || []).map(async (event) => {
-          const { data: reportData } = await supabase
+        (data || []).map(async (event: any) => {
+          const { data: reportData } = await proxyClient
             .from('event_reports')
             .select('id')
             .eq('event_id', event.id)
@@ -361,13 +382,21 @@ export default function ReportsTab() {
       
       setEvents(eventsWithReports);
       
-      // جلب جميع المشاركين للإحصائيات
+      // جلب المشاركين بطريقة محسنة - استعلام واحد لكل فعالية
       const allParticipantsData = await Promise.all(
         eventsWithReports.map(async (event) => {
-          const { data: participantsData } = await supabase.rpc('get_event_participants', { event_id_input: event.id });
+          const { data: participantsData } = await proxyClient
+            .from('event_registrations')
+            .select(`
+              role,
+              status,
+              profiles!inner(full_name, student_id, phone_number)
+            `)
+            .eq('event_id', event.id);
           return (participantsData as Participant[]) || [];
         })
       );
+      
       setAllParticipants(allParticipantsData.flat());
     } catch (e: any) { setError("فشل جلب الفعاليات"); } finally { setIsLoading(false); }
   }, []);

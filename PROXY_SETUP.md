@@ -42,16 +42,16 @@ import { proxyClient } from '@/lib/supabaseClient';
 ### 2. استخدام العمليات
 ```typescript
 // جلب البيانات
-const { data, error } = await proxyClient.from('events').select('*');
+const { data, error } = await (await proxyClient.from('events')).select('*');
 
 // إدراج بيانات
-const { data, error } = await proxyClient.from('events').insert(eventData);
+const { data, error } = await (await proxyClient.from('events')).insert(eventData);
 
 // تحديث بيانات
-const { data, error } = await proxyClient.from('events').update(eventData);
+const { data, error } = await (await proxyClient.from('events')).update(eventData);
 
 // حذف بيانات
-const { data, error } = await proxyClient.from('events').delete();
+const { data, error } = await (await proxyClient.from('events')).delete();
 ```
 
 ### 3. المصادقة
@@ -63,8 +63,50 @@ const { data, error } = await supabase.auth.signInWithPassword({
   email,
   password
 });
+```
 
-// تسجيل الخروج
+## المميزات الجديدة
+
+### 1. معالجة الأخطاء المحسنة
+- رسائل خطأ واضحة باللغة العربية
+- معالجة أخطاء الشبكة والاتصال
+- تسجيل مفصل للأخطاء
+
+### 2. التحقق من الصحة
+- التحقق من صحة البيانات المرسلة
+- التحقق من وجود التوكن المطلوب
+- معالجة أخطاء المصادقة
+
+### 3. الأداء
+- تخزين مؤقت للطلبات
+- معالجة أخطاء الشبكة
+- رسائل خطأ واضحة
+
+## استكشاف الأخطاء
+
+### مشاكل شائعة:
+
+1. **خطأ "فشل في الاتصال بالخادم"**
+   - تحقق من اتصال الإنترنت
+   - تأكد من أن الخادم يعمل
+   - تحقق من إعدادات الشبكة
+
+2. **خطأ "Invalid authentication token"**
+   - تأكد من تسجيل الدخول
+   - جرب تسجيل الخروج والدخول مرة أخرى
+
+3. **خطأ "Database operation failed"**
+   - تحقق من صحة البيانات المرسلة
+   - تأكد من وجود الجداول المطلوبة
+
+## ملاحظات مهمة
+
+- البروكسي يعمل فقط مع العمليات التي تتطلب مصادقة
+- المصادقة تتم مباشرة مع Supabase
+- جميع عمليات قاعدة البيانات تمر عبر البروكسي
+
+### 4. تسجيل الخروج
+```typescript
 await supabase.auth.signOut();
 ```
 

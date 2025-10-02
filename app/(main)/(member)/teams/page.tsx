@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation'; // استيراد useRouter
-import { supabase } from '@/lib/supabaseClient';
+import { proxyClient } from '@/lib/supabaseClient';
 import TeamCard from '@/components/TeamCard';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext'; // استيراد useAuth
@@ -38,8 +38,8 @@ useEffect(() => {
     const fetchTeams = async () => {
       setIsLoading(true); // نبدأ التحميل
       try {
-        const { data, error } = await supabase
-          .from('teams')
+        const { data, error } = await (await proxyClient
+          .from('teams'))
           .select('*')
           .order('name', { ascending: true });
         

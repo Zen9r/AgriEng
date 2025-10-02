@@ -1,6 +1,6 @@
 // src/hooks/useGalleryImages.ts
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabaseClient';
+import { proxyClient } from '@/lib/supabaseClient';
 
 // واجهة البيانات لصورة المعرض
 export interface GalleryImage {
@@ -16,17 +16,26 @@ export interface GalleryImage {
  * دالة لجلب كل صور المعرض، مرتبة حسب تاريخ الإنشاء
  */
 const fetchGalleryImages = async (): Promise<GalleryImage[]> => {
-  const { data, error } = await supabase
-    .from('gallery_images')
-    .select('*')
-    .order('created_at', { ascending: false });
+  try {
+    const { data, error } = await proxyClient
+      .from('gallery_images')
+      .select('*');
 
-  if (error) {
+    if (error) {
+      console.error('Error fetching gallery images:', error);
+      throw new Error(error.message);
+    }
+
+    // Sort the data manually since order method might not work with proxy
+    const sortedData = (data || []).sort((a: any, b: any) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    return sortedData;
+  } catch (error: any) {
     console.error('Error fetching gallery images:', error);
-    throw new Error(error.message);
+    throw new Error(error.message || 'Failed to fetch gallery images');
   }
-
-  return data || [];
 };
 
 /**

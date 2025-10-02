@@ -5,7 +5,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabaseClient"
+import { supabase, proxyClient } from "@/lib/supabaseClient"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -77,7 +77,7 @@ export default function RegisterPage() {
       
       const userId = authData.user.id;
 
-      const { error: profileError } = await supabase.from("profiles").insert({
+      const { error: profileError } = await proxyClient.from("profiles").insert({
         id: userId,
         full_name: formData.fullName,
         student_id: formData.studentId,
@@ -90,7 +90,7 @@ export default function RegisterPage() {
       if (profileError) throw profileError;
       
       // --- [STEP 3] Send the new fields to the database ---
-      const { error: applicationError } = await supabase.from("club_applications").insert({
+      const { error: applicationError } = await proxyClient.from("club_applications").insert({
         user_id: userId,
         self_introduction: formData.self_introduction,
         joining_reason: formData.joiningReason,

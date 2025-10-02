@@ -54,8 +54,23 @@ export default function EventsPreview() {
     if (!allEvents || allEvents.length === 0) {
       return [];
     }
+    
+    // 🕐 فلتر الفعاليات: إخفاء أي فعالية انتهت ومر عليها أكثر من ساعة
+    const now = new Date();
+    const activeEvents = allEvents.filter(event => {
+      // إذا لم يكن هناك وقت انتهاء، أظهر الفعالية
+      if (!event.end_time) return true;
+      
+      const endTime = new Date(event.end_time);
+      // إضافة ساعة واحدة لوقت الانتهاء
+      const oneHourAfterEnd = new Date(endTime.getTime() + 60 * 60 * 1000);
+      
+      // إذا الوقت الحالي أكبر من (وقت الانتهاء + ساعة)، لا تظهر الفعالية
+      return now < oneHourAfterEnd;
+    });
+    
     // Create a shuffled copy of the array and take the first 3 elements
-    return [...allEvents].sort(() => 0.5 - Math.random()).slice(0, 3);
+    return [...activeEvents].sort(() => 0.5 - Math.random()).slice(0, 3);
   }, [allEvents]);
 
   const handleAttendEvent = (event: Event) => {
@@ -107,7 +122,7 @@ export default function EventsPreview() {
                     <Button className="flex-1" onClick={() => handleAttendEvent(event)} disabled={isRegistering}>
                       {isRegistering ? 'جارٍ التسجيل...' : 'تسجيل'}
                     </Button>
-                    <Link href={`/events/${event.id}`} className="flex-1">
+                    <Link href={`/${event.id}`} className="flex-1">
                       <Button variant="outline" className="w-full">التفاصيل</Button>
                     </Link>
                   </CardFooter>

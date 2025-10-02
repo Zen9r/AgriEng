@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, proxyClient } from '@/lib/supabaseClient';
 import toast, { Toaster } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -16,12 +16,12 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Calendar, Clock, MapPin, Users, Tag, ArrowRight, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
-// ✅ This interface perfectly matches the output of our new database function
+// ✅ This interface matches the database schema with all fields
 interface Event {
   id: number;
   created_at: string;
   team_id: string | null;
-  title: string | null;
+  title: string;
   description: string | null;
   location: string | null;
   start_time: string | null;
@@ -177,29 +177,49 @@ export default function EventDetailPage() {
         const { data: { user } } = await supabase.auth.getUser();
         setUser(user);
 
-        // 🌟 FIX: We use a type assertion `as any` on the function name to bypass the outdated list,
-        // and then we explicitly tell TypeScript the expected return type with `<Event>`.
-        const { data, error: eventError } = await supabase
-          .rpc('get_event_details' as any, { p_event_id: eventIdAsNumber });
-
-        // Since .rpc with a single object return doesn't have .single(), we check the result directly.
-        const eventData = Array.isArray(data) ? data[0] : data;
+        // Use proxyClient to fetch event data with all fields
+        const { data: eventData, error: eventError } = await proxyClient
+          .from('events')
+          .select('*')
+          .eq('id', eventIdAsNumber)
+          .single();
 
         if (eventError || !eventData) {
-          console.error("Supabase RPC error:", eventError);
+          console.error("Error fetching event:", eventError);
           toast.error("لم يتم العثور على الفعالية أو حدث خطأ.");
           setLoading(false);
           setEvent(null);
           return;
         }
 
+        // Fetch the count of registered attendees separately
+        const { count: registeredCount, error: countError } = await proxyClient
+          .from('event_registrations')
+          .select('*', { count: 'exact', head: true })
+          .eq('event_id', eventIdAsNumber);
+
+        if (countError) {
+          console.error("Error counting registrations:", countError);
+        }
+
+        // Combine the data
+        const completeEventData = {
+          ...eventData,
+          registered_attendees: registeredCount || 0
+        };
+
         if (user) {
-          const { data: registration } = await supabase.from('event_registrations').select('status').eq('user_id', user.id).eq('event_id', eventIdAsNumber).maybeSingle();
+          const { data: registration } = await proxyClient
+            .from('event_registrations')
+            .select('status')
+            .eq('user_id', user.id)
+            .eq('event_id', eventIdAsNumber)
+            .maybeSingle();
           setRegistrationStatus(registration?.status === 'attended' ? 'attended' : registration ? 'registered' : 'not_registered');
         }
         
-        // This is now safe because we've told TypeScript what to expect from the RPC call.
-        setEvent(eventData as Event);
+        // Set the complete event data
+        setEvent(completeEventData as Event);
 
       } catch (error) {
         toast.error('حدث خطأ في جلب بيانات الفعالية');
@@ -215,7 +235,12 @@ export default function EventDetailPage() {
     if (!user || !event) return;
     const toastId = toast.loading('جارٍ تسجيلك...');
     try {
-      const { data: existingRegistration } = await supabase.from('event_registrations').select().eq('user_id', user.id).eq('event_id', eventId).maybeSingle();
+      const { data: existingRegistration } = await proxyClient
+        .from('event_registrations')
+        .select()
+        .eq('user_id', user.id)
+        .eq('event_id', eventId)
+        .maybeSingle();
       if (existingRegistration) {
         toast.error('لقد سجلت في هذه الفعالية مسبقاً', { id: toastId });
         return;
@@ -224,7 +249,9 @@ export default function EventDetailPage() {
         toast.error('لا توجد مقاعد متاحة', { id: toastId });
         return;
       }
-      const { error } = await supabase.from('event_registrations').insert({ user_id: user.id, event_id: eventId, status: 'registered', role: role });
+      const { error } = await proxyClient
+        .from('event_registrations')
+        .insert({ user_id: user.id, event_id: eventId, status: 'registered', role: role });
       if (error) throw error;
       setEvent(prev => prev ? { ...prev, registered_attendees: (prev.registered_attendees || 0) + 1 } : null);
       setRegistrationStatus('registered');
@@ -246,7 +273,7 @@ export default function EventDetailPage() {
       if (verificationCode.toLowerCase() !== event.check_in_code?.toLowerCase()) {
         throw new Error("كود التحقق غير صحيح");
       }
-      const { error } = await supabase.from('event_registrations').update({ status: 'attended' }).eq('user_id', user.id).eq('event_id', event.id);
+      const { error } = await proxyClient.from('event_registrations').update({ status: 'attended' }).eq('user_id', user.id).eq('event_id', event.id);
       if (error) throw error;
       setRegistrationStatus('attended');
       toast.success('تم التحقق من حضورك بنجاح!', { id: toastId });

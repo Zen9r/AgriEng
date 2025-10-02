@@ -1,6 +1,6 @@
 // src/hooks/useUserProfileData.ts
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabaseClient';
+import { proxyClient } from '@/lib/supabaseClient';
 import { useAuth } from '@/context/AuthContext';
 
 // --- ١. استيراد الأنواع من مصادرها الصحيحة ---
@@ -26,15 +26,20 @@ export interface UserProfileData {
 
 // --- ٣. تعديل الدالة لإخبار TypeScript بنوع البيانات العائدة ---
 const fetchUserProfileData = async (userId: string): Promise<UserProfileData | null> => {
-    const { data, error } = await supabase
-        .rpc('get_user_profile_data', { p_user_id: userId });
+    try {
+        const { data, error } = await proxyClient
+            .rpc('get_user_profile_data', { p_user_id: userId });
 
-    if (error) {
+        if (error) {
+            console.error("Error fetching user profile data:", error);
+            throw new Error(error.message);
+        }
+        // "نؤكد" لـ TypeScript أن هذه البيانات هي من نوع UserProfileData
+        return data as UserProfileData | null;
+    } catch (error: any) {
         console.error("Error fetching user profile data:", error);
-        throw new Error(error.message);
+        throw new Error(error.message || 'Failed to fetch user profile data');
     }
-    // "نؤكد" لـ TypeScript أن هذه البيانات هي من نوع UserProfileData
-    return data as UserProfileData | null;
 };
 
 /**

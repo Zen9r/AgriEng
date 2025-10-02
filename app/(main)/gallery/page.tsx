@@ -94,25 +94,88 @@ export default function GalleryPage() {
         </div>
       </section>
 
-      {/* Filter Tabs Section with new theme */}
+      {/* Filter Tabs Section with enhanced animations */}
       <section className="py-4 bg-background/80 backdrop-blur-sm border-b border-border sticky top-[80px] md:top-[96px] z-20 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-center overflow-x-auto pb-2 space-x-2 space-x-reverse">
-            {allStaticCategories.map((category) => (
-                <motion.button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`relative px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                    selectedCategory === category ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-                >
-                {selectedCategory === category && (
-                    <motion.div layoutId="activeFilterPill" className="absolute inset-0 bg-primary rounded-full z-0" transition={{ type: "spring", stiffness: 300, damping: 30 }} />
-                )}
-                <span className="relative z-10">{category}</span>
-                </motion.button>
-            ))}
-            </div>
+            <motion.div 
+              className="flex justify-center overflow-x-auto pb-2"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
+              <motion.div
+                className="flex items-center space-x-2 space-x-reverse"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  hidden: { opacity: 0 },
+                  visible: {
+                    opacity: 1,
+                    transition: {
+                      staggerChildren: 0.08,
+                      delayChildren: 0.1
+                    }
+                  }
+                }}
+              >
+                {allStaticCategories.map((category, index) => (
+                  <motion.button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`relative px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                      selectedCategory === category ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                    variants={{
+                      hidden: { opacity: 0, y: 20, scale: 0.9 },
+                      visible: { 
+                        opacity: 1, 
+                        y: 0, 
+                        scale: 1,
+                        transition: {
+                          type: "spring",
+                          stiffness: 200,
+                          damping: 20
+                        }
+                      }
+                    }}
+                    whileHover={{ 
+                      scale: 1.08,
+                      y: -3,
+                      transition: { 
+                        duration: 0.2,
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 15
+                      }
+                    }}
+                    whileTap={{ 
+                      scale: 0.95,
+                      y: 0,
+                      transition: { 
+                        duration: 0.1,
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 20
+                      }
+                    }}
+                  >
+                    {selectedCategory === category && (
+                      <motion.div 
+                        layoutId="activeFilterPill" 
+                        className="absolute inset-0 bg-primary rounded-full z-0" 
+                        transition={{ 
+                          type: "spring", 
+                          stiffness: 400, 
+                          damping: 25,
+                          duration: 0.5
+                        }} 
+                      />
+                    )}
+                    <span className="relative z-10">{category}</span>
+                  </motion.button>
+                ))}
+              </motion.div>
+            </motion.div>
         </div>
       </section>
 
@@ -145,8 +208,8 @@ export default function GalleryPage() {
                         >
                             {/* 🌟 بداية الإصلاح هنا */}
                             <img 
-                                // إذا كان الرابط null، استخدم رابطًا احتياطيًا
-                                src={image.image_url ?? "/placeholder.svg"} 
+                                // إصلاح المسار المكرر وإذا كان الرابط null، استخدم رابطًا احتياطيًا
+                                src={image.image_url?.replace('/gallery-images/gallery-images/', '/gallery-images/') ?? "/placeholder.svg"} 
                                 // إذا كان النص البديل null، استخدم نصًا افتراضيًا
                                 alt={image.alt_text ?? 'صورة من المعرض'} 
                                 className="w-full h-64 object-cover" 
@@ -183,7 +246,7 @@ export default function GalleryPage() {
             >
               {/* 🌟 بداية الإصلاح هنا */}
               <img 
-                src={selectedImage.image_url ?? "/placeholder.svg"} 
+                src={selectedImage.image_url?.replace('/gallery-images/gallery-images/', '/gallery-images/') ?? "/placeholder.svg"} 
                 alt={selectedImage.alt_text ?? 'صورة من المعرض'} 
                 className="object-contain rounded-lg w-auto h-auto max-w-full max-h-[calc(90vh-80px)] shadow-2xl"
               />

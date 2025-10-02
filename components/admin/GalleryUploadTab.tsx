@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, proxyClient } from '@/lib/supabaseClient';
 import toast from 'react-hot-toast';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -66,7 +66,16 @@ export default function GalleryUploadTab() {
       
       setUploadProgress(60);
       toast('جاري رفع الصورة...', { icon: '🚀' });
-      const filePath = `gallery-images/${Date.now()}-${compressedFile.name}`;
+      
+      // تنظيف اسم الملف ليكون متوافق مع Supabase Storage
+      const sanitizeFileName = (name: string) => {
+        return name
+          .replace(/[^a-zA-Z0-9.-]/g, '_')
+          .replace(/_{2,}/g, '_')
+          .replace(/^_|_$/g, '');
+      };
+      
+      const filePath = `${Date.now()}-${sanitizeFileName(compressedFile.name)}`;
       const { error: uploadError } = await supabase.storage
         .from('gallery-images')
         .upload(filePath, compressedFile);
@@ -91,7 +100,7 @@ export default function GalleryUploadTab() {
 
   // دالة الإرسال النهائية إلى قاعدة البيانات
   const onSubmit: SubmitHandler<GalleryFormValues> = async (data) => {
-    const { error } = await supabase.from('gallery_images').insert({
+    const { error } = await proxyClient.from('gallery_images').insert({
       image_url: data.image_url,
       alt_text: data.alt_text,
       category: data.category,

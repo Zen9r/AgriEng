@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { proxyClient } from "@/lib/supabaseClient";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from 'zod';
@@ -43,7 +43,7 @@ export default function ContactPage() {
     setIsSubmitting(true);
     setFormStatus(null);
     try {
-      const { error } = await supabase.from('contact_messages').insert({
+      const { error } = await proxyClient.from('contact_messages').insert({
         full_name: data.name, email: data.email, phone: data.phone,
         title: data.title,
         subject: data.subject || null,

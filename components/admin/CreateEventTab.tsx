@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, proxyClient } from '@/lib/supabaseClient';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -573,7 +573,10 @@ export default function EventManagementTab() {
   const fetchEvents = useCallback(async () => {
     setIsLoading(true);
     try {
-        const { data, error } = await supabase.from('events').select('*').order('created_at', { ascending: false });
+        const { data, error } = await proxyClient
+          .from('events')
+          .select('*')
+          .order('created_at', { ascending: false });
         if (error) throw error;
         // Cast to unknown first to avoid type mismatch
         setEvents(data as unknown as DatabaseEvent[]);
@@ -583,23 +586,55 @@ export default function EventManagementTab() {
   useEffect(() => { fetchEvents(); }, [fetchEvents]);
 
   const handleCreate = async (data: any) => {
-    const { error } = await supabase.from('events').insert({ ...data, check_in_code: Math.floor(100000 + Math.random() * 900000).toString() });
-    if (error) { toast.error(error.message); } 
-    else { toast.success("تم إنشاء الفعالية."); await fetchEvents(); setActiveTab('manage'); }
+    try {
+      const { error } = await proxyClient
+        .from('events')
+        .insert({ ...data, check_in_code: Math.floor(100000 + Math.random() * 900000).toString() });
+      if (error) { 
+        console.error('Create event error:', error);
+        toast.error(`خطأ في إنشاء الفعالية: ${error.message}`); 
+      } else { 
+        toast.success("تم إنشاء الفعالية بنجاح!"); 
+        await fetchEvents(); 
+        setActiveTab('manage'); 
+      }
+    } catch (error: any) {
+      console.error('Create event error:', error);
+      toast.error(`خطأ في إنشاء الفعالية: ${error.message}`);
+    }
   };
   
   const handleUpdate = async (data: any) => {
     if (!selectedEvent) return;
-    const { error } = await supabase.from('events').update(data).eq('id', selectedEvent.id);
-    if (error) { toast.error(error.message); }
-    else { toast.success("تم تحديث الفعالية."); setMode('create'); setSelectedEvent(null); await fetchEvents(); setActiveTab('manage'); }
+    try {
+      const { error } = await proxyClient
+        .from('events')
+        .update(data)
+        .eq('id', selectedEvent.id);
+      if (error) { 
+        console.error('Update event error:', error);
+        toast.error(`خطأ في تحديث الفعالية: ${error.message}`); 
+      } else { 
+        toast.success("تم تحديث الفعالية بنجاح!"); 
+        setMode('create'); 
+        setSelectedEvent(null); 
+        await fetchEvents(); 
+        setActiveTab('manage'); 
+      }
+    } catch (error: any) {
+      console.error('Update event error:', error);
+      toast.error(`خطأ في تحديث الفعالية: ${error.message}`);
+    }
   };
 
   const handleDeleteEvent = async (eventId: number) => {
   const confirm = window.confirm("هل أنت متأكد من حذف الفعالية؟ لا يمكن التراجع.");
   if (!confirm) return;
 
-  const { error } = await supabase.from('events').delete().eq('id', eventId);
+  const { error } = await proxyClient
+    .from('events')
+    .delete()
+    .eq('id', eventId);
   if (error) {
     toast.error("فشل الحذف: " + error.message);
   } else {
