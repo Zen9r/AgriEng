@@ -17,11 +17,13 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import HoursInput from '@/components/ui/HoursInput';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Inbox, Check, X, ListChecks, PlusCircle, Archive } from 'lucide-react';
+import { Loader2, Inbox, Check, X, ListChecks, PlusCircle, Archive, ChevronsUpDown } from 'lucide-react';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 // --- Schema ---
 const manualLogSchema = z.object({
@@ -40,11 +42,15 @@ interface ManualLogFormProps {
 }
 
 export function ManualLogForm({ members, userId, onSuccess }: ManualLogFormProps) {
-  const { control, handleSubmit, reset, formState: { errors } } = useForm<ManualLogFormData>({ 
+  const { control, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<ManualLogFormData>({ 
     resolver: zodResolver(manualLogSchema), 
     defaultValues: { memberId: '', description: '', hours: undefined }
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [open, setOpen] = useState(false);
+  
+  const selectedMemberId = watch('memberId');
+  const selectedMember = members.find(m => m.id === selectedMemberId);
 
   const onManualLogSubmit = async (data: ManualLogFormData) => {
     setIsSubmitting(true);
@@ -61,20 +67,75 @@ export function ManualLogForm({ members, userId, onSuccess }: ManualLogFormProps
     const { error } = await supabase.from('extra_hours_requests').insert(insertObject);
 
     if (error) { toast.error("فشل في تسجيل الساعات."); } 
-    else { toast.success("تم تسجيل الساعات بنجاح."); reset(); onSuccess?.(); }
+    else { 
+      toast.success("تم تسجيل الساعات بنجاح."); 
+      reset(); 
+      setOpen(false);
+      onSuccess?.(); 
+    }
     setIsSubmitting(false);
   };
 
   return (
     <Card>
-      <CardHeader><CardTitle>تسجيل ساعات لمهمة</CardTitle><CardDescription>منح ساعات مباشرة لعضو في النادي لمهمة مكتملة.</CardDescription></CardHeader>
+      <CardHeader>
+        <CardTitle>تسجيل ساعات لمهمة</CardTitle>
+        <CardDescription>منح ساعات مباشرة لعضو في النادي لمهمة مكتملة.</CardDescription>
+      </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onManualLogSubmit)} className="space-y-6">
           <div className="space-y-1.5">
             <Label htmlFor="memberId">اختر عضو النادي</Label>
-            <Controller name="memberId" control={control} render={({ field }) => (
-                <Select onValueChange={field.onChange} value={field.value} dir="rtl"><SelectTrigger id="memberId"><SelectValue placeholder="اختر عضوًا..." /></SelectTrigger><SelectContent>{members.map(m => <SelectItem key={m.id} value={m.id}>{m.full_name || 'مستخدم غير معروف'}</SelectItem>)}</SelectContent></Select>
-            )} />
+            <Controller 
+              name="memberId" 
+              control={control} 
+              render={({ field }) => (
+                <Popover open={open} onOpenChange={setOpen} modal={true}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={open}
+                      className="w-full justify-between"
+                      type="button"
+                    >
+                      {selectedMember
+                        ? selectedMember.full_name || 'مستخدم غير معروف'
+                        : "اختر عضوًا..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0" align="start">
+                    <Command dir="rtl">
+                      <CommandInput placeholder="ابحث عن عضو..." className="h-9" />
+                      <CommandList>
+                        <CommandEmpty>لم يتم العثور على أي عضو.</CommandEmpty>
+                        <CommandGroup>
+                          {members.map((member) => (
+                            <CommandItem
+                              key={member.id}
+                              value={member.full_name || 'مستخدم غير معروف'}
+                              onSelect={() => {
+                                setValue('memberId', member.id, { shouldValidate: true });
+                                setOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedMemberId === member.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {member.full_name || 'مستخدم غير معروف'}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              )} 
+            />
             {errors.memberId && <p className="text-red-500 text-sm mt-1">{errors.memberId.message}</p>}
           </div>
           <div className="space-y-1.5">

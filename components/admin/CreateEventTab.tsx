@@ -24,6 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { PlusCircle, Edit, Loader2, CalendarIcon, Upload, Link as LinkIcon, AlertTriangle, Copy, Check, Trash } from 'lucide-react';
 
 // --- Types & Schema ---
@@ -44,8 +45,8 @@ type DatabaseEvent = {
 
 const eventFormSchema = z.object({
   title: z.string().min(3, "العنوان إجباري."),
-  description: z.string().min(10, "الوصف المختصر إجباري."),
-  details: z.string().min(20, "التفاصيل الكاملة إجبارية."),
+  description: z.string().min(1, "الوصف المختصر إجباري."),
+  details: z.string().min(1, "التفاصيل الكاملة إجبارية."),
   location: z.string().min(3, "الموقع إجباري."),
   startDate: z.date({ required_error: "تاريخ البدء إجباري." }),
   startHour: z.string({ required_error: "الساعة إجبارية." }),
@@ -77,6 +78,29 @@ const combineDateTime = (date: Date, hour: string, minute: string): string => {
 const hoursOptions = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
 const minutesOptions = ['00', '15', '30', '45'];
 
+// Helper function to determine event status
+const getEventStatus = (startTime: string, endTime: string): 'upcoming' | 'live' | 'past' => {
+  const now = new Date();
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+  
+  if (now < start) return 'upcoming';
+  if (now >= start && now <= end) return 'live';
+  return 'past';
+};
+
+// Helper function to get badge variant and text
+const getStatusBadge = (status: 'upcoming' | 'live' | 'past') => {
+  switch (status) {
+    case 'upcoming':
+      return { variant: 'default' as const, text: 'قادم', className: 'bg-blue-500 hover:bg-blue-600' };
+    case 'live':
+      return { variant: 'default' as const, text: 'جاري', className: 'bg-green-500 hover:bg-green-600' };
+    case 'past':
+      return { variant: 'secondary' as const, text: 'منتهي', className: 'bg-gray-500 hover:bg-gray-600' };
+  }
+};
+
 
 // --- Reusable Form Component ---
 function EventForm({ mode, initialData, onSubmit, onCancel }: {
@@ -94,10 +118,10 @@ function EventForm({ mode, initialData, onSubmit, onCancel }: {
             location: initialData?.location || '',
             startDate: initialData?.start_time ? new Date(initialData.start_time) : undefined,
             startHour: initialData?.start_time ? format(new Date(initialData.start_time), 'HH') : undefined,
-            startMinute: initialData?.start_time ? format(new Date(initialData.start_time), 'mm') : undefined,
+            startMinute: initialData?.start_time ? format(new Date(initialData.start_time), 'mm') : '00',
             endDate: initialData?.end_time ? new Date(initialData.end_time) : undefined,
             endHour: initialData?.end_time ? format(new Date(initialData.end_time), 'HH') : undefined,
-            endMinute: initialData?.end_time ? format(new Date(initialData.end_time), 'mm') : undefined,
+            endMinute: initialData?.end_time ? format(new Date(initialData.end_time), 'mm') : '00',
             category: initialData?.category,
             max_attendees: initialData?.max_attendees || undefined,
             image_url: initialData?.image_url || '',
@@ -360,10 +384,22 @@ export default function EventManagementTab() {
             {isLoading ? <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin"/></div>
              : error ? <Alert variant="destructive"><AlertTriangle className="h-4 w-4"/><AlertTitle>خطأ</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>
              : <Accordion type="single" collapsible className="w-full">
-                 {events.map(event => (
+                 {events.map(event => {
+                   const status = getEventStatus(event.start_time, event.end_time);
+                   const badgeInfo = getStatusBadge(status);
+                   
+                   return (
                    <AccordionItem key={event.id} value={String(event.id)}>
                      <AccordionTrigger>
-                       <div className="flex justify-between items-center w-full pr-4"><span>{event.title}</span><span className="text-sm text-muted-foreground">{format(new Date(event.start_time), 'yyyy/MM/dd')}</span></div>
+                       <div className="flex justify-between items-center w-full pr-4 gap-3">
+                         <span className="font-medium">{event.title}</span>
+                         <div className="flex items-center gap-2">
+                           <Badge className={badgeInfo.className}>{badgeInfo.text}</Badge>
+                           <span className="text-sm text-muted-foreground whitespace-nowrap">
+                             {format(new Date(event.start_time), 'yyyy/MM/dd HH:mm')}
+                           </span>
+                         </div>
+                       </div>
                      </AccordionTrigger>
                      <AccordionContent className="space-y-4">
                        <div className="flex flex-wrap items-center justify-between gap-4">
@@ -382,7 +418,8 @@ export default function EventManagementTab() {
 
                      </AccordionContent>
                    </AccordionItem>
-                 ))}
+                   );
+                 })}
                </Accordion>
             }
           </CardContent>
